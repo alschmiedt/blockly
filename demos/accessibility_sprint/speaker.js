@@ -88,8 +88,7 @@ Blockly.Speaker.prototype.nodeToText = function(oldNode, curNode) {
     text += ' a previous connection for block ';
     text += curNode.getSourceBlock().toString();
   } else if (curNode.getType() == Blockly.ASTNode.types.FIELD) {
-    text += ' a field ' + location.getDisplayText_() + ' ';
-    text += 'To open the field press enter';
+    text += location.getDisplayText_() + ' ';
   } else if (curNode.getType() == Blockly.ASTNode.types.WORKSPACE) {
     text += ' a workspace coordinate';
   } else if (curNode.getType() == Blockly.ASTNode.types.STACK) {

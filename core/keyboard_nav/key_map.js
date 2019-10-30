@@ -158,7 +158,7 @@ Blockly.user.keyMap.createSerializedKey = function(keyCode, modifiers) {
 Blockly.user.keyMap.createDefaultKeyMap = function() {
   var map = {};
   var controlK = Blockly.user.keyMap.createSerializedKey(
-      Blockly.utils.KeyCodes.K, [Blockly.user.keyMap.modifierKeys.CONTROL]);
+      Blockly.utils.KeyCodes.K, [Blockly.user.keyMap.modifierKeys.SHIFT,Blockly.user.keyMap.modifierKeys.CONTROL]);
 
   map[Blockly.utils.KeyCodes.W] = Blockly.navigation.ACTION_PREVIOUS;
   map[Blockly.utils.KeyCodes.A] = Blockly.navigation.ACTION_OUT;

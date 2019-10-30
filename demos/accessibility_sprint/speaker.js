@@ -70,9 +70,9 @@ Blockly.Speaker.prototype.nodeToText = function(oldNode, curNode) {
       text += 'if 6 = 5';
     } else {
       if (curNode.getSourceBlock().getSurroundParent()) {
-        text += 'inside if ';
+        text += 'inside if. ';
       } else if (oldNode && oldNode.getSourceBlock().getSurroundParent()) {
-        text += 'outside if ';
+        text += 'outside if. ';
       }
       text += curNode.getLocation().toString();
     }

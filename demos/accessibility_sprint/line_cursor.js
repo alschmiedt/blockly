@@ -43,10 +43,29 @@ Blockly.utils.object.inherits(Blockly.LineCursor, Blockly.Cursor);
  * @private
  */
 Blockly.LineCursor.prototype.validNode_ = function(node) {
+  if (!node) {
+    return false;
+  }
   var isValid = false;
+  var location = node.getLocation();
   var type = node && node.getType();
   if (type == Blockly.ASTNode.types.BLOCK) {
-    isValid = true;
+    if (location.outputConnection === null) {
+      isValid = true;
+    }
+  }
+  return isValid;
+};
+
+Blockly.LineCursor.prototype.validInNode_ = function(node) {
+  if (!node) {
+    return false;
+  }
+  var isValid = false;
+  var location = node.getLocation();
+  var type = node && node.getType();
+  if (type == Blockly.ASTNode.types.FIELD) {
+      isValid = true;
   }
   return isValid;
 };
@@ -77,21 +96,21 @@ Blockly.LineCursor.prototype.findSiblingOrParent_ = function(node) {
  * @return {Blockly.ASTNode} The next node in the traversal.
  * @private
  */
-Blockly.LineCursor.prototype.getNextNode_ = function(node) {
+Blockly.LineCursor.prototype.getNextNode_ = function(node, isValid) {
   if (!node) {
     return null;
   }
   var newNode = node.in() || node.next();
-  if (this.validNode_(newNode)) {
+  if (isValid(newNode)) {
     return newNode;
   } else if (newNode) {
-    return this.getNextNode_(newNode);
+    return this.getNextNode_(newNode, isValid);
   }
   var siblingOrParent = this.findSiblingOrParent_(node.out());
-  if (this.validNode_(siblingOrParent)) {
+  if (isValid(siblingOrParent)) {
     return siblingOrParent;
   } else if (siblingOrParent) {
-    return this.getNextNode_(siblingOrParent);
+    return this.getNextNode_(siblingOrParent, isValid);
   }
   return null;
 };
@@ -124,7 +143,7 @@ Blockly.LineCursor.prototype.getRightMostChild_ = function(node) {
  *     previous node exists.
  * @private
  */
-Blockly.LineCursor.prototype.getPreviousNode_ = function(node) {
+Blockly.LineCursor.prototype.getPreviousNode_ = function(node, isValid) {
   if (!node) {
     return null;
   }
@@ -135,10 +154,10 @@ Blockly.LineCursor.prototype.getPreviousNode_ = function(node) {
   } else {
     newNode = node.out();
   }
-  if (this.validNode_(newNode)) {
+  if (isValid(newNode)) {
     return newNode;
   } else if (newNode) {
-    return this.getPreviousNode_(newNode);
+    return this.getPreviousNode_(newNode, isValid);
   }
   return null;
 };
@@ -154,7 +173,7 @@ Blockly.LineCursor.prototype.next = function() {
   if (!curNode) {
     return null;
   }
-  var newNode = this.getNextNode_(curNode);
+  var newNode = this.getNextNode_(curNode, this.validNode_);
 
   if (newNode) {
     this.setCurNode(newNode);
@@ -170,7 +189,16 @@ Blockly.LineCursor.prototype.next = function() {
  * @override
  */
 Blockly.LineCursor.prototype.in = function() {
-  return this.next();
+  var curNode = this.getCurNode();
+  if (!curNode) {
+    return null;
+  }
+  var newNode = this.getNextNode_(curNode, this.validInNode_);
+
+  if (newNode) {
+    this.setCurNode(newNode);
+  }
+  return newNode;
 };
 
 /**
@@ -184,7 +212,7 @@ Blockly.LineCursor.prototype.prev = function() {
   if (!curNode) {
     return null;
   }
-  var newNode = this.getPreviousNode_(curNode);
+  var newNode = this.getPreviousNode_(curNode, this.validNode_);
   
   if (newNode) {
     this.setCurNode(newNode);
@@ -200,5 +228,15 @@ Blockly.LineCursor.prototype.prev = function() {
  * @override
  */
 Blockly.LineCursor.prototype.out = function() {
-  return this.prev();
+  var curNode = this.getCurNode();
+  if (!curNode) {
+    return null;
+  }
+  var newNode = this.getPreviousNode_(curNode, this.validInNode_);
+
+  if (newNode) {
+    this.setCurNode(newNode);
+  }
+  return newNode;
+
 };

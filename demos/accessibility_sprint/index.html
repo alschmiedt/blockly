@@ -9,7 +9,7 @@
   <script src="../../msg/js/en.js"></script>
   <script src="basic_cursor.js"></script>
   <script src="line_cursor.js"></script>
-  <script src="speak.js"></script>
+  <script src="speaker.js"></script>
   <style>
     body {
       background-color: #fff;
@@ -178,6 +178,7 @@
     } else {
       Blockly.getMainWorkspace().setCursor(new Blockly.Cursor());
     }
+    Blockly.getMainWorkspace().getCursor().setSpeaker(new Blockly.Speaker());
 
     Blockly.Xml.domToWorkspace(document.getElementById(blocksId),
                                demoWorkspace);
@@ -527,13 +528,6 @@
     // End key mapping demo functions
 
     // Accessibility Sprint functions
-
-    function speak(e) {
-      var loggingElement = document.getElementById('loggingFeedback');
-      loggingElement.innerText = Blockly.speak.eventToText(e);
-    }
-    
-    demoWorkspace.addChangeListener(speak);
 
   </script>
 

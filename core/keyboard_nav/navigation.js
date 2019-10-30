@@ -667,6 +667,7 @@ Blockly.navigation.moveCursorOnBlockMutation = function(mutatedBlock) {
  */
 Blockly.navigation.enableKeyboardAccessibility = function() {
   if (!Blockly.getMainWorkspace().keyboardAccessibilityMode) {
+    Blockly.navigation.log_('Keyboard navigation on. ');
     Blockly.getMainWorkspace().keyboardAccessibilityMode = true;
     Blockly.navigation.focusWorkspace_();
   }
@@ -684,6 +685,7 @@ Blockly.navigation.disableKeyboardAccessibility = function() {
     if (Blockly.navigation.getFlyoutCursor_()) {
       Blockly.navigation.getFlyoutCursor_().hide();
     }
+    Blockly.navigation.log_('Keyboard navigation off. ');
   }
 };
 
@@ -694,10 +696,11 @@ Blockly.navigation.disableKeyboardAccessibility = function() {
  * @private
  */
 Blockly.navigation.log_ = function(msg) {
-  if (Blockly.navigation.loggingCallback) {
-    Blockly.navigation.loggingCallback('log', msg);
+  var speaker = Blockly.getMainWorkspace().getCursor().getSpeaker();
+  if (speaker) {
+    speaker.speak('log', msg);
   } else {
-    console.log(msg);
+    console.warn(msg);
   }
 };
 
@@ -708,8 +711,9 @@ Blockly.navigation.log_ = function(msg) {
  * @private
  */
 Blockly.navigation.warn_ = function(msg) {
-  if (Blockly.navigation.loggingCallback) {
-    Blockly.navigation.loggingCallback('warn', msg);
+  var speaker = Blockly.getMainWorkspace().getCursor().getSpeaker();
+  if (speaker) {
+    speaker.speak('warn', msg);
   } else {
     console.warn(msg);
   }
@@ -722,10 +726,11 @@ Blockly.navigation.warn_ = function(msg) {
  * @private
  */
 Blockly.navigation.error_ = function(msg) {
-  if (Blockly.navigation.loggingCallback) {
-    Blockly.navigation.loggingCallback('error', msg);
+  var speaker = Blockly.getMainWorkspace().getCursor().getSpeaker();
+  if (speaker) {
+    speaker.speak('error', msg);
   } else {
-    console.error(msg);
+    console.log(msg);
   }
 };
 

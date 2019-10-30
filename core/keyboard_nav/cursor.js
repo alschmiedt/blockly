@@ -44,6 +44,13 @@ Blockly.Cursor = function() {
    * @private
    */
   this.drawer_ = null;
+
+  /**
+   * The object in charge of drawing the visual representation of the current node.
+   * @type {Blockly.Speaker}
+   * @private
+   */
+  this.speaker_ = null;
 };
 
 /**
@@ -60,6 +67,22 @@ Blockly.Cursor.prototype.setDrawer = function(drawer) {
  */
 Blockly.Cursor.prototype.getDrawer = function() {
   return this.drawer_;
+};
+
+/**
+ * Sets the object in charge of speaking.
+ * @param {Blockly.Speaker} speaker The object in charge of speaking.
+ */
+Blockly.Cursor.prototype.setSpeaker = function(speaker) {
+  this.speaker_ = speaker;
+};
+
+/**
+ * Get the object in charge of speaking.
+ * @return {Blockly.Speaker} speaker The speaker in charge of speaking.
+ */
+Blockly.Cursor.prototype.getSpeaker = function() {
+  return this.speaker_;
 };
 
 /**
@@ -80,6 +103,10 @@ Blockly.Cursor.prototype.getCurNode = function() {
 Blockly.Cursor.prototype.setCurNode = function(newNode) {
   var oldNode = this.curNode_;
   this.curNode_ = newNode;
+  if (this.speaker_ && newNode) {
+    console.log(newNode);
+    this.speaker_.speak('node', 'msg', oldNode, newNode);
+  }
   if (this.drawer_) {
     this.drawer_.draw(oldNode, this.curNode_);
   }

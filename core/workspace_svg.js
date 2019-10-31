@@ -43,6 +43,7 @@ goog.require('Blockly.Workspace');
 goog.require('Blockly.WorkspaceAudio');
 goog.require('Blockly.WorkspaceDragSurfaceSvg');
 goog.require('Blockly.Xml');
+goog.require('Blockly.Speaker');
 
 goog.requireType('Blockly.blockRendering.Renderer');
 
@@ -147,6 +148,8 @@ Blockly.WorkspaceSvg = function(options,
    * @private
    */
   this.cachedParentSvg_ = null;
+
+  this.speaker = new Blockly.Speaker(this);
 };
 Blockly.utils.object.inherits(Blockly.WorkspaceSvg, Blockly.Workspace);
 

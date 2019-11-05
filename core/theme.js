@@ -22,7 +22,9 @@
 
 goog.provide('Blockly.Theme');
 
+goog.require('Blockly.utils');
 goog.require('Blockly.utils.colour');
+
 
 /**
  * Class for a theme.
@@ -163,23 +165,25 @@ Blockly.Theme.createBlockStyle = function(colour) {
  */
 Blockly.Theme.validatedBlockStyle = function(blockStyle) {
   // Make a new object with all of the same properties.
-  var valid = {};
+  var valid = /** @type {!Blockly.Theme.BlockStyle} */ ({});
   if (blockStyle) {
     Blockly.utils.object.mixin(valid, blockStyle);
   }
 
   // Validate required properties.
-  var parsedColour = Blockly.utils.colour.parseBlockColour(
-      valid.colourPrimary || '#000');
+  var parsedColour = Blockly.utils.parseBlockColour(
+      valid['colourPrimary'] || '#000');
   valid.colourPrimary = parsedColour.hex;
-  valid.colourSecondary = valid.colourSecondary ?
-      Blockly.utils.colour.parseBlockColour(valid.colourSecondary).hex :
-      Blockly.utils.colour.blend('#fff', valid.colourPrimary, 0.6);
+  valid.colourSecondary = valid['colourSecondary'] ?
+      Blockly.utils.parseBlockColour(valid['colourSecondary']).hex :
+      Blockly.utils.colour.blend('#fff', valid.colourPrimary, 0.6) ||
+      valid.colourPrimary;
   valid.colourTertiary = valid.colourTertiary ?
-      Blockly.utils.colour.parseBlockColour(valid.colourTertiary).hex :
-      Blockly.utils.colour.blend('#fff', valid.colourPrimary, 0.3);
+      Blockly.utils.parseBlockColour(valid['colourTertiary']).hex :
+      Blockly.utils.colour.blend('#fff', valid.colourPrimary, 0.3) ||
+      valid.colourPrimary;
 
-  valid.hat = valid.hat || '';
+  valid.hat = valid['hat'] || '';
   return valid;
 };
 
@@ -200,6 +204,15 @@ Blockly.Theme.prototype.getCategoryStyle = function(categoryStyleName) {
 Blockly.Theme.prototype.setCategoryStyle = function(categoryStyleName,
     categoryStyle) {
   this.categoryStyles_[categoryStyleName] = categoryStyle;
+};
+
+/**
+ * Gets a map of all the category style names.
+ * @return {!Object.<string, Blockly.Theme.CategoryStyle>} Map of category
+ *     styles.
+ */
+Blockly.Theme.prototype.getAllCategoryStyles = function() {
+  return this.categoryStyles_;
 };
 
 /**

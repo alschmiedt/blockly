@@ -40,7 +40,6 @@ goog.require('Blockly.utils.Coordinate');
 goog.require('Blockly.utils.dom');
 goog.require('Blockly.utils.object');
 goog.require('Blockly.utils.Rect');
-goog.require('Blockly.Warning');
 
 
 /**
@@ -76,23 +75,6 @@ Blockly.BlockSvg = function(workspace, prototypeName, opt_id) {
    */
   this.pathObject = workspace.getRenderer().makePathObject(this.svgGroup_);
 
-  // The next two paths are set only for backwards compatibility reasons.
-  /**
-   * The primary path of the block.
-   * @type {SVGElement}
-   * @private
-   */
-  this.svgPath_ = this.pathObject.svgPath || null;
-
-  /**
-   * The light path of the block.
-   * @type {SVGElement}
-   * @private
-   */
-  this.svgPathLight_ = this.pathObject.svgPathLight || null;
-
-  this.svgPath_.tooltip = this;
-
   /** @type {boolean} */
   this.rendered = false;
 
@@ -115,7 +97,9 @@ Blockly.BlockSvg = function(workspace, prototypeName, opt_id) {
   this.useDragSurface_ =
       Blockly.utils.is3dSupported() && !!workspace.getBlockDragSurface();
 
-  Blockly.Tooltip.bindMouseEvents(this.svgPath_);
+  var svgPath = this.pathObject.svgPath;
+  svgPath.tooltip = this;
+  Blockly.Tooltip.bindMouseEvents(svgPath);
   Blockly.BlockSvg.superClass_.constructor.call(this,
       workspace, prototypeName, opt_id);
 
@@ -258,7 +242,7 @@ Blockly.BlockSvg.prototype.initSvg = function() {
   if (!this.workspace.rendered) {
     throw TypeError('Workspace is headless.');
   }
-  for (var i = 0, input; input = this.inputList[i]; i++) {
+  for (var i = 0, input; (input = this.inputList[i]); i++) {
     input.init();
   }
   var icons = this.getIcons();
@@ -621,7 +605,7 @@ Blockly.BlockSvg.prototype.getBoundingRectangle = function() {
  * A dirty field is a field that needs to be re-rendererd.
  */
 Blockly.BlockSvg.prototype.markDirty = function() {
-  for (var i = 0, input; input = this.inputList[i]; i++) {
+  for (var i = 0, input; (input = this.inputList[i]); i++) {
     input.markDirty();
   }
 };
@@ -636,7 +620,7 @@ Blockly.BlockSvg.prototype.setCollapsed = function(collapsed) {
   }
   var renderList = [];
   // Show/hide the inputs.
-  for (var i = 0, input; input = this.inputList[i]; i++) {
+  for (var i = 0, input; (input = this.inputList[i]); i++) {
     renderList.push.apply(renderList, input.setVisible(!collapsed));
   }
 
@@ -656,7 +640,7 @@ Blockly.BlockSvg.prototype.setCollapsed = function(collapsed) {
       var index = descendants.indexOf(nextBlock);
       descendants.splice(index, descendants.length - index);
     }
-    for (var i = 1, block; block = descendants[i]; i++) {
+    for (var i = 1, block; (block = descendants[i]); i++) {
       if (block.warning) {
         this.setWarningText(Blockly.Msg['COLLAPSED_WARNINGS_WARNING'],
             Blockly.BlockSvg.COLLAPSED_WARNING_ID);
@@ -680,7 +664,7 @@ Blockly.BlockSvg.prototype.setCollapsed = function(collapsed) {
     renderList[0] = this;
   }
   if (this.rendered) {
-    for (var i = 0, block; block = renderList[i]; i++) {
+    for (var i = 0, block; (block = renderList[i]); i++) {
       block.render();
     }
     // Don't bump neighbours.
@@ -1023,8 +1007,6 @@ Blockly.BlockSvg.prototype.dispose = function(healStack, animate) {
   blockWorkspace.resizeContents();
   // Sever JavaScript to DOM connections.
   this.svgGroup_ = null;
-  this.svgPath_ = null;
-  this.svgPathLight_ = null;
   Blockly.utils.dom.stopTextWidthCache();
 };
 
@@ -1045,8 +1027,8 @@ Blockly.BlockSvg.prototype.applyColour = function() {
     icons[i].applyColour();
   }
 
-  for (var x = 0, input; input = this.inputList[x]; x++) {
-    for (var y = 0, field; field = input.fieldRow[y]; y++) {
+  for (var x = 0, input; (input = this.inputList[x]); x++) {
+    for (var y = 0, field; (field = input.fieldRow[y]); y++) {
       field.applyColour();
     }
   }
@@ -1060,18 +1042,17 @@ Blockly.BlockSvg.prototype.updateDisabled = function() {
     var added = Blockly.utils.dom.addClass(
         /** @type {!Element} */ (this.svgGroup_), 'blocklyDisabled');
     if (added) {
-      this.svgPath_.setAttribute('fill',
-          'url(#' + this.workspace.options.disabledPatternId + ')');
+      this.pathObject.setDisabled(true, this.isShadow());
     }
   } else {
     var removed = Blockly.utils.dom.removeClass(
         /** @type {!Element} */ (this.svgGroup_), 'blocklyDisabled');
     if (removed) {
-      this.applyColour();
+      this.pathObject.setDisabled(false, this.isShadow());
     }
   }
   var children = this.getChildren(false);
-  for (var i = 0, child; child = children[i]; i++) {
+  for (var i = 0, child; (child = children[i]); i++) {
     child.updateDisabled();
   }
 };
@@ -1107,7 +1088,7 @@ Blockly.BlockSvg.prototype.setCommentText = function(text) {
   }
   if (shouldHaveComment) {
     this.commentIcon_ = new Blockly.Comment(this);
-    this.comment = this.commentIcon_; // For backwards compatibility.
+    this.comment = this.commentIcon_;  // For backwards compatibility.
   } else {
     this.commentIcon_.dispose();
     this.commentIcon_ = null;
@@ -1127,6 +1108,9 @@ Blockly.BlockSvg.prototype.setCommentText = function(text) {
  *     maintain multiple warnings.
  */
 Blockly.BlockSvg.prototype.setWarningText = function(text, opt_id) {
+  if (!Blockly.Warning) {
+    throw Error('Missing require for Blockly.Warning');
+  }
   if (!this.warningTextDb_) {
     // Create a database of warning PIDs.
     // Only runs once per block (and only those with warnings).
@@ -1251,14 +1235,7 @@ Blockly.BlockSvg.prototype.setHighlighted = function(highlighted) {
   if (!this.rendered) {
     return;
   }
-  if (highlighted) {
-    this.svgPath_.setAttribute('filter',
-        'url(#' + this.workspace.options.embossFilterId + ')');
-    this.svgPathLight_.style.display = 'none';
-  } else {
-    this.svgPath_.setAttribute('filter', 'none');
-    this.svgPathLight_.style.display = 'inline';
-  }
+  this.pathObject.setHighlighted(highlighted);
 };
 
 /**
@@ -1544,7 +1521,7 @@ Blockly.BlockSvg.prototype.getConnections_ = function(all) {
       myConnections.push(this.nextConnection);
     }
     if (all || !this.collapsed_) {
-      for (var i = 0, input; input = this.inputList[i]; i++) {
+      for (var i = 0, input; (input = this.inputList[i]); i++) {
         if (input.connection) {
           myConnections.push(input.connection);
         }
@@ -1610,7 +1587,7 @@ Blockly.BlockSvg.prototype.bumpNeighbours = function() {
   }
   // Loop through every connection on this block.
   var myConnections = this.getConnections_(false);
-  for (var i = 0, connection; connection = myConnections[i]; i++) {
+  for (var i = 0, connection; (connection = myConnections[i]); i++) {
 
     // Spider down from this block bumping all sub-blocks.
     if (connection.isConnected() && connection.isSuperior()) {
@@ -1618,7 +1595,7 @@ Blockly.BlockSvg.prototype.bumpNeighbours = function() {
     }
 
     var neighbours = connection.neighbours(Blockly.SNAP_RADIUS);
-    for (var j = 0, otherConnection; otherConnection = neighbours[j]; j++) {
+    for (var j = 0, otherConnection; (otherConnection = neighbours[j]); j++) {
 
       // If both connections are connected, that's probably fine.  But if
       // either one of them is unconnected, then there could be confusion.

@@ -1632,7 +1632,7 @@ Blockly.Msg.WORKSPACE_COMMENT_DEFAULT_TEXT = 'Say something...';
 /** @type {string} */
 /// workspace - This text is read out when a user navigates to the workspace while
 /// using a screen reader.
-Blockly.Msg.WORKSPACE_ARIA_LABEL = 'Blockly Workspace';
+Blockly.Msg.WORKSPACE_ARIA_LABEL = 'Blockly Workspace. To enter accessibility mode click control shift k.';
 
 /** @type {string} */
 /// warning - This appears if the user collapses a block, and blocks inside

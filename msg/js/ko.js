@@ -400,6 +400,7 @@ Blockly.Msg["VARIABLES_SET_HELPURL"] = "https://ko.wikipedia.org/wiki/%EB%B3%80%
 Blockly.Msg["VARIABLES_SET_TOOLTIP"] = "변수의 값을 입력한 값으로 변경해 줍니다.";
 Blockly.Msg["VARIABLE_ALREADY_EXISTS"] = "'%1' 변수는 이미 존재합니다.";
 Blockly.Msg["VARIABLE_ALREADY_EXISTS_FOR_ANOTHER_TYPE"] = "'%1' 변수는 다른 유형에 대해 이미 존재합니다: '%2'.";
+Blockly.Msg["WORKSPACE_ARIA_LABEL"] = "Blockly Workspace. To enter accessibility mode click control shift k.";  // untranslated
 Blockly.Msg["WORKSPACE_COMMENT_DEFAULT_TEXT"] = "말해 보세요...";
 Blockly.Msg["CONTROLS_FOREACH_INPUT_DO"] = Blockly.Msg["CONTROLS_REPEAT_INPUT_DO"];
 Blockly.Msg["CONTROLS_FOR_INPUT_DO"] = Blockly.Msg["CONTROLS_REPEAT_INPUT_DO"];

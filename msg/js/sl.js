@@ -400,6 +400,7 @@ Blockly.Msg["VARIABLES_SET_HELPURL"] = "https://github.com/google/blockly/wiki/V
 Blockly.Msg["VARIABLES_SET_TOOLTIP"] = "Nastavi, da je vrednost spremenljivke enaka vnosu.";
 Blockly.Msg["VARIABLE_ALREADY_EXISTS"] = "Spremenljivka »%1« že obstaja.";
 Blockly.Msg["VARIABLE_ALREADY_EXISTS_FOR_ANOTHER_TYPE"] = "Spremenljivka z imenom %1 že obstaja za tip %2";
+Blockly.Msg["WORKSPACE_ARIA_LABEL"] = "Blockly Workspace. To enter accessibility mode click control shift k.";  // untranslated
 Blockly.Msg["WORKSPACE_COMMENT_DEFAULT_TEXT"] = "Say something...";  // untranslated
 Blockly.Msg["CONTROLS_FOREACH_INPUT_DO"] = Blockly.Msg["CONTROLS_REPEAT_INPUT_DO"];
 Blockly.Msg["CONTROLS_FOR_INPUT_DO"] = Blockly.Msg["CONTROLS_REPEAT_INPUT_DO"];

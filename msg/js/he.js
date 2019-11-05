@@ -400,6 +400,7 @@ Blockly.Msg["VARIABLES_SET_HELPURL"] = "https://github.com/google/blockly/wiki/V
 Blockly.Msg["VARIABLES_SET_TOOLTIP"] = "מגדיר משתנה זה להיות שווה לקלט.";
 Blockly.Msg["VARIABLE_ALREADY_EXISTS"] = "קיים כבר משתנה בשם \"%1\".";
 Blockly.Msg["VARIABLE_ALREADY_EXISTS_FOR_ANOTHER_TYPE"] = "קיים כבר משתנה בשם \"%1\" מסוג אחר: \"%2\"";
+Blockly.Msg["WORKSPACE_ARIA_LABEL"] = "סביבת העבודה חסומה";
 Blockly.Msg["WORKSPACE_COMMENT_DEFAULT_TEXT"] = "נא להזין הערה...";
 Blockly.Msg["CONTROLS_FOREACH_INPUT_DO"] = Blockly.Msg["CONTROLS_REPEAT_INPUT_DO"];
 Blockly.Msg["CONTROLS_FOR_INPUT_DO"] = Blockly.Msg["CONTROLS_REPEAT_INPUT_DO"];

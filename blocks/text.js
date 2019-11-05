@@ -73,6 +73,7 @@ Blockly.defineBlocksWithJsonArray([  // BEGIN JSON EXTRACT
              'MYMjlMB+K613QISRhTnITnsYg5yUd0DETmEoMlkFOeIT/A58iyK5E18BuTBfgYX' +
              'fwNJv4P9/oEBerLylOnRhygmGdPpTTBZAPkde61lbQe4moWUvYUZYLfUNftIY4z' +
              'wA5X2Z9AYnQrEAAAAASUVORK5CYII=',
+      "alt_text": "",
       "width": 12,
       "height": 17,
       "alt": '\u00B6'
@@ -663,11 +664,12 @@ Blockly.Constants.Text.QUOTE_IMAGE_MIXIN = {
     var dataUri = isLeft ?
       this.QUOTE_IMAGE_LEFT_DATAURI :
       this.QUOTE_IMAGE_RIGHT_DATAURI;
+    var altText = isLeft ? "Open quote" : "Close quote";
     return new Blockly.FieldImage(
         dataUri,
         this.QUOTE_IMAGE_WIDTH,
         this.QUOTE_IMAGE_HEIGHT,
-        isLeft ? '\u201C' : '\u201D');
+        altText);
   }
 };
 

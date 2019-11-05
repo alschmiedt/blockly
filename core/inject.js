@@ -87,7 +87,7 @@ Blockly.inject = function(container, opt_options) {
   });
 
   subContainer.addEventListener('blur', function() {
-    Blockly.mainWorkspace = null;
+    // Blockly.mainWorkspace = null;
   });
 
   return workspace;

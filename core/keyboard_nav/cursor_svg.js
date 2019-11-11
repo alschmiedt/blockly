@@ -514,6 +514,8 @@ Blockly.CursorSvg.prototype.draw = function(oldNode, curNode) {
     this.showWithStack_(curNode);
   }
 
+  this.workspace_.speaker.sayNode(oldNode, curNode, this.cursorSvg_);
+  this.cursorSvg_.focus();
   this.fireCursorEvent_(oldNode, curNode);
 
   // Ensures the cursor will be visible immediately after the move.
@@ -561,7 +563,8 @@ Blockly.CursorSvg.prototype.createCursorSvg_ = function() {
         'width': Blockly.CursorSvg.CURSOR_WIDTH,
         'height': Blockly.CursorSvg.CURSOR_HEIGHT
       }, this.svgGroup_);
-
+  this.cursorSvg_.tabIndex = 0;
+  Blockly.utils.aria.setRole(this.cursorSvg_, "");
   // A horizontal line used to represent a workspace coordinate or next connection.
   this.cursorSvgLine_ = Blockly.utils.dom.createSvgElement('rect',
       {

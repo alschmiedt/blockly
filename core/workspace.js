@@ -29,6 +29,7 @@ goog.require('Blockly.Events');
 goog.require('Blockly.utils');
 goog.require('Blockly.utils.math');
 goog.require('Blockly.VariableMap');
+goog.require('Blockly.Speaker');
 
 
 /**
@@ -132,6 +133,11 @@ Blockly.Workspace = function(opt_options) {
    * @package
    */
   this.keyboardAccessibilityMode = false;
+
+  /**
+   * Speaker used to convert the cursor location to text.
+   */
+  this.speaker = new Blockly.Speaker();
 };
 
 /**

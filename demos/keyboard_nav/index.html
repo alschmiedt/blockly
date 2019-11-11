@@ -8,6 +8,7 @@
   <script src="../../javascript_compressed.js"></script>
   <script src="../../msg/js/en.js"></script>
   <script src="basic_cursor.js"></script>
+  <script src="line_cursor.js"></script>
   <link rel="stylesheet" href="base.css">
 	<link rel="stylesheet" href="dialog.css">
   <style>
@@ -119,11 +120,11 @@
       <button onclick="workspaceSkip()" class="menuBtn">Skip To Workspace</button>
     </div>
     <div class="btnContainer">
-      <button class="menuBtn">Modify Keyboard Shortcuts</button>
+      <button class="open-dialogTwo menuBtn">Modify Keyboard Shortcuts</button>
     </div>
   </div>
 
-  <div class="dialog" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+  <div id="shortcutDialog" class="dialog" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
     <h2>Workspace Shortcuts</h2>
     <div class="shortcutContainer">
       <p class="shortcutKey">w</p>
@@ -150,25 +151,30 @@
     <button type="button" aria-label="Close Navigation" class="close-dialog" tabindex="0">Close Dialog</button>
   </div>
 
+  <div id="modifyShortCutDialog" class="dialog" role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+    <h2>Change Shortcuts</h2>
+    <form id="keyboard_mappings"></form>
+    <button type="button" aria-label="Close Navigation" class="close-dialogTwo" tabindex="0">Close Dialog</button>
+  </div>
+
   <h1><a href="https://developers.google.com/blockly/">Blockly</a> &gt;
     <a href="../index.html">Demos</a> &gt; Keyboard Navigation</h1>
 
-  <p>
+  <!-- <p>
     <label for="accessibilityModeCheck">Enable Accessibility Mode:</label>
     <input type="checkbox" onclick="toggleAccessibilityMode(this.checked)" id="accessibilityModeCheck">
     <select id="cursorChanger" name="cursor" onchange="changeCursor(this.value)">
       <option value="default">Default Cursor</option>
       <option value="basic">Basic Cursor</option>
     </select>
-    <!-- <label for="displayKeyMappings">Open Key Mappings:</label>
-    <input type="checkbox" onclick="toggleDisplayKeyMappings(this.checked)" id="displayKeyMappings"> -->
-  </p>
+    <label for="displayKeyMappings">Open Key Mappings:</label>
+    <input type="checkbox" onclick="toggleDisplayKeyMappings(this.checked)" id="displayKeyMappings">
+  </p> -->
 
   <div class="wrapper">
     <div id="blocklyDiv" style="height: 480px; width: 600px;"></div>
     <div id="keyboard_nav" style="display:none">
       <p id="keyboard_announce" aria-live="assertive">Set key mappings below</p>
-      <form id="keyboard_mappings"></form>
     </div>    
   </div>
 
@@ -205,78 +211,42 @@
   </xml>
 
   <xml xmlns="https://developers.google.com/blockly/xml" id="startBlocks" style="display: none">
-    <variables>
-      <variable id="~GNXm@Z(wclI]t3zTf.g">list</variable>
-      <variable id="8]s[S+Gy+%k7HoFup])m">item</variable>
-    </variables>
-    <block type="controls_if" x="37" y="162">
+    <block type="controls_if" id="fr?h[p]2AJ3$wU)^ic3]" x="62" y="87">
       <value name="IF0">
-        <block type="logic_compare">
+        <block type="logic_compare" id=";$}2XXog25O=6QUeWnK!">
           <field name="OP">EQ</field>
           <value name="A">
-            <block type="math_arithmetic">
-              <field name="OP">ADD</field>
-              <value name="A">
-                <shadow type="math_number">
-                  <field name="NUM">1</field>
-                </shadow>
-              </value>
-              <value name="B">
-                <shadow type="math_number">
-                  <field name="NUM">1</field>
-                </shadow>
-              </value>
+            <block type="math_number" id="]TpWpCY6TGj`[6ZCR/H.">
+              <field name="NUM">6</field>
             </block>
           </value>
           <value name="B">
-            <block type="math_single">
-              <field name="OP">ROOT</field>
-              <value name="NUM">
-                <shadow type="math_number">
-                  <field name="NUM">9</field>
-                </shadow>
-                <block type="math_number">
-                  <field name="NUM">123</field>
-                </block>
-              </value>
+            <block type="math_number" id="*m(qJ*_}T(_1D5.FnYFz">
+              <field name="NUM">5</field>
             </block>
           </value>
         </block>
       </value>
       <statement name="DO0">
-        <block type="lists_setIndex">
-          <mutation at="true"></mutation>
-          <field name="MODE">SET</field>
-          <field name="WHERE">FROM_START</field>
-          <value name="LIST">
-            <block type="variables_get">
-              <field name="VAR" id="~GNXm@Z(wclI]t3zTf.g">list</field>
-            </block>
+        <block type="text_print" id="YI]inde~/gAWJei*+E(q">
+          <value name="TEXT">
+            <shadow type="text" id="(z=CPG8J3k#=eHlrT4ul">
+              <field name="TEXT">abc</field>
+            </shadow>
           </value>
-          <next>
-            <block type="text_append">
-              <field name="VAR" id="8]s[S+Gy+%k7HoFup])m">item</field>
-              <value name="TEXT">
-                <shadow type="text">
-                  <field name="TEXT"></field>
-                </shadow>
-              </value>
-            </block>
-          </next>
         </block>
       </statement>
       <next>
-        <block type="controls_repeat_ext">
-          <value name="TIMES">
-            <shadow type="math_number">
-              <field name="NUM">10</field>
+        <block type="text_print" id="dBKFmR~?H?!d4%B9|hJ1">
+          <value name="TEXT">
+            <shadow type="text" id="KpfFb8D5qC{AlEsT*a;w">
+              <field name="TEXT">def</field>
             </shadow>
           </value>
         </block>
       </next>
     </block>
   </xml>
-
   <script>
 
     document.getElementById('container').addEventListener('focusin', function() {
@@ -641,7 +611,9 @@
     function workspaceSkip() {
       var injectionDiv = document.getElementsByClassName('injectionDiv')[0];
       if (injectionDiv) {
+        Blockly.ASTNode.NAVIGATE_ALL_FIELDS = true;
         injectionDiv.focus();
+        Blockly.getMainWorkspace().setCursor(new Blockly.LineCursor());
         Blockly.navigation.enableKeyboardAccessibility();
       }
     }
@@ -652,14 +624,14 @@
 
   <script src="Dialog.js"></script>
   <script>
-    var shortcutDialog = document.querySelector('.dialog');
-    var dialogOverlay = document.querySelector('.dialog-overlay');
+    var shortcutDialogDiv = document.getElementById('shortcutDialog');
+    var dialogOverlayDiv = document.querySelector('.dialog-overlay');
+    var shortcutDiv = new Dialog(shortcutDialogDiv, dialogOverlayDiv);
+    shortcutDiv.addEventListeners('.open-dialog', '.close-dialog');
 
-    var changeShortcutDialog = document.querySelector('.dialog');
-  
-    var myDialog = new Dialog(shortcutDialog, dialogOverlay);
-
-    myDialog.addEventListeners('.open-dialog', '.close-dialog');
+    var changeShortcutDialogDiv = document.getElementById('modifyShortCutDialog');
+    var changeShortcutDialog = new Dialog(changeShortcutDialogDiv, dialogOverlayDiv);
+    changeShortcutDialog.addEventListeners('.open-dialogTwo', '.close-dialogTwo');
   </script>
 
 </body>

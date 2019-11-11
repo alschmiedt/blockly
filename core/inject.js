@@ -88,6 +88,13 @@ Blockly.inject = function(container, opt_options) {
     Blockly.mainWorkspace = workspace;
   });
 
+<<<<<<< HEAD
+=======
+  // subContainer.addEventListener('blur', function() {
+  //   Blockly.mainWorkspace = null;
+  // });
+
+>>>>>>> 0752f65d... Add speaker and focus
   return workspace;
 };
 

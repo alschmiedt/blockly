@@ -355,7 +355,9 @@ Blockly.NewToolbox.prototype.clearSelection = function() {
  * Updates the category colours and background colour of selected categories.
  * @package
  */
-Blockly.NewToolbox.prototype.refreshTheme = function() {};
+Blockly.NewToolbox.prototype.refreshTheme = function() {
+
+};
 
 /**
  * Update the flyout's contents without closing it.  Should be used in response
@@ -382,20 +384,24 @@ Blockly.NewToolbox.prototype.selectFirstCategory = function() {};
 
 /**
  * Set the given item as selected.
- * @param {Blockly.IToolboxItem} item The toolbox item to select.
+ * @param {Blockly.IToolboxItem} newItem The toolbox item to select.
  */
-Blockly.NewToolbox.prototype.setSelectedItem = function(item) {
-  // TODO: Add event logging.
-  // Unselect the old item.
-  if (this.selectedItem_) {
-    this.selectedItem_.setSelected(false);
+Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
+  var oldItem = this.selectedItem_;
+
+  if (!newItem && !oldItem) {
+    return;
   }
 
-  if (!item || this.selectedItem_ == item) {
+  if (oldItem) {
+    oldItem.setSelected(false);
+  }
+
+  if (!newItem || oldItem == newItem) {
     this.selectedItem_ = null;
     this.flyout_.hide();
   } else {
-    this.selectedItem_ = item;
+    this.selectedItem_ = newItem;
     this.selectedItem_.setSelected(true);
     // If the new item does not have contents close the old flyout.
     // TODO: This can be fixed to just check the blocks array when I split them up.
@@ -406,6 +412,27 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(item) {
       this.flyout_.hide();
     }
   }
+  this.createEvent_(oldItem, newItem);
+};
+
+/**
+ * Emits an event when a new toolbox item is selected.
+ * @param {Blockly.IToolboxItem} oldItem The previously selected toolbox item.
+ * @param {Blockly.IToolboxItem} newItem The currently selected toolbox item.
+ * @private
+ */
+Blockly.NewToolbox.prototype.createEvent_ = function(oldItem, newItem) {
+  var oldElement = oldItem && oldItem.getName();
+  var newElement = newItem && newItem.getName();
+  // In this case the toolbox closes, so the newElement should be null.
+  if (oldItem == newItem) {
+    newElement = null;
+  }
+  // TODO: Should this change from category since we can have toolbox items?
+  var event = new Blockly.Events.Ui(null, 'category',
+      oldElement, newElement);
+  event.workspaceId = this.workspace_.id;
+  Blockly.Events.fire(event);
 };
 
 /**
@@ -474,16 +501,16 @@ Blockly.Css.register([
     'padding: 4px 0;',
   '}',
 
-  '.blocklyTreeRoot:focus {',
-    'outline: none;',
-  '}',
-
   '.blocklyTreeRow {',
     'height: 22px;',
     'line-height: 22px;',
     'margin-bottom: 3px;',
     'padding-right: 8px;',
     'white-space: nowrap;',
+  '}',
+
+  '.blocklyTreeRow:focus {',
+    'outline: none !important;',
   '}',
 
   '.blocklyHorizontalTree {',
@@ -521,6 +548,7 @@ Blockly.Css.register([
     'height: 16px;',
     'vertical-align: middle;',
     'width: 16px;',
+    'visibility: hidden;',
   '}',
 
   '.blocklyTreeIconClosedLtr {',
@@ -545,11 +573,6 @@ Blockly.Css.register([
 
   '.blocklyTreeSelected>.blocklyTreeIconOpen {',
     'background-position: -16px -17px;',
-  '}',
-
-  '.blocklyTreeIconNone,',
-  '.blocklyTreeSelected>.blocklyTreeIconNone {',
-    'background-position: -48px -1px;',
   '}',
 
   '.blocklyTreeLabel {',

@@ -110,8 +110,11 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
    */
   this.expanded_ = true;
 
+  // TODO: External users would have to decide what class to create.
+  var closedIcon = this.workspace_.RTL ?
+      'blocklyTreeIconClosedRtl' : 'blocklyTreeIconClosedLtr';
   /**
-   * The config for all the classes in the category.
+   * The config for all the category classes.
    * @type {Object}
    * @protected
    */
@@ -122,7 +125,8 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
     'label': 'blocklyTreeLabel',
     'contents': 'blocklyToolboxContents',
     'selected': 'blocklyTreeSelected',
-    'openIcon': ''
+    'openIcon': 'blocklyTreeIconOpen',
+    'closedIcon': closedIcon,
   };
 
   Blockly.utils.object.mixin(this.classConfig_, categoryDef['classConfig']);
@@ -134,10 +138,10 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
  */
 Blockly.ToolboxCategory.prototype.createDom = function() {
   this.htmlDiv_ = document.createElement('div');
-  this.htmlDiv_.classList.add(this.classConfig_['container']);
+  Blockly.utils.dom.addClass(this.htmlDiv_, this.classConfig_['container']);
 
   this.rowDiv_ = document.createElement('div');
-  this.rowDiv_.classList.add(this.classConfig_['row']);
+  Blockly.utils.dom.addClass(this.rowDiv_, this.classConfig_['row']);
   this.htmlDiv_.appendChild(this.rowDiv_);
   // TODO: Should this be on the htmlDiv_ or the rowDiv_?
   this.rowDiv_.tabIndex = 0;
@@ -146,7 +150,7 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
     // TODO: All these classes do is add margins. Do we want to keep this?
     var horizontalClass = this.workspace_.RTL ?
         'blocklyHorizontalTreeRtl' : 'blocklyHorizontalTree';
-    this.htmlDiv_.classList.add(horizontalClass);
+    Blockly.utils.dom.addClass(this.htmlDiv_, horizontalClass);
   }
   this.iconDiv_ = this.createIconSpan_();
   this.rowDiv_.appendChild(this.iconDiv_);
@@ -164,7 +168,7 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
   this.setExpanded(this.expanded_);
 
   this.clickEvent_ = Blockly.bindEvent_(
-      this.rowDiv_, 'mouseup', this, this.onClick_);
+      this.rowDiv_, 'click', this, this.onClick_);
 
   this.keyDownEvent_ = Blockly.bindEvent_(
       this.rowDiv_, 'keydown', this, this.onKeyDown_);
@@ -197,7 +201,7 @@ Blockly.ToolboxCategory.prototype.addColour_ = function(rowDiv, colour) {
  */
 Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
   var contentsContainer = document.createElement('div');
-  contentsContainer.classList.add(this.classConfig_['contents']);
+  Blockly.utils.dom.addClass(contentsContainer, this.classConfig_['contents']);
   if (this.workspace_.RTL) {
     contentsContainer.style.paddingRight = '19px';
   } else {
@@ -222,10 +226,9 @@ Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
 Blockly.ToolboxCategory.prototype.createIconSpan_ = function() {
   var toolboxIcon = document.createElement('span');
   if (!this.parentToolbox_.isHorizontal()) {
-    toolboxIcon.classList.add(this.classConfig_['icon']);
-    if (!this.hasCategories()) {
-      // TODO: This is a bit weird. We should only add if we have a category.
-      toolboxIcon.classList.add('blocklyTreeIconNone');
+    Blockly.utils.dom.addClass(toolboxIcon, this.classConfig_['icon']);
+    if (this.hasCategories()) {
+      toolboxIcon.style.visibility = 'visible';
     }
   }
 
@@ -241,8 +244,7 @@ Blockly.ToolboxCategory.prototype.createIconSpan_ = function() {
 Blockly.ToolboxCategory.prototype.createLabelSpan_ = function() {
   var toolboxLabel = document.createElement('span');
   toolboxLabel.textContent = this.name_;
-  // TODO: Should get the class name from the config.
-  toolboxLabel.classList.add(this.classConfig_['label']);
+  Blockly.utils.dom.addClass(toolboxLabel, this.classConfig_['label']);
   return toolboxLabel;
 };
 
@@ -336,13 +338,12 @@ Blockly.ToolboxCategory.prototype.hasCategories = function() {
  * @param {boolean} isSelected True if this category is selected, false otherwise.
  */
 Blockly.ToolboxCategory.prototype.setSelected = function(isSelected) {
-  console.log("Setting selected for category");
   if (isSelected) {
     this.rowDiv_.style.backgroundColor = this.colour_ || '#57e';
-    this.rowDiv_.classList.add(this.classConfig_['selected']);
+    Blockly.utils.dom.addClass(this.rowDiv_, this.classConfig_['selected']);
   } else {
     this.rowDiv_.style.backgroundColor = '';
-    this.rowDiv_.classList.remove(this.classConfig_['selected']);
+    Blockly.utils.dom.removeClass(this.rowDiv_, this.classConfig_['selected']);
   }
 };
 
@@ -367,29 +368,43 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
   this.expanded_ = isExpanded;
   if (isExpanded) {
     this.subCategoriesDiv_.style.display = 'block';
-    // TODO: All these classes should come from a class config.
-    this.iconDiv_.classList.add('blocklyTreeIconOpen');
-    // TODO: Is there a better way than always checking the workspace direction?
-    // TODO: Get a class config based on the direction?
-    // TODO: How does this work for people passing in configs?
-    if (this.workspace_.RTL) {
-      this.iconDiv_.classList.remove('blocklyTreeIconClosedRtl');
-    } else {
-      this.iconDiv_.classList.remove('blocklyTreeIconClosedLtr');
-    }
+    this.openIcon_(this.iconDiv_);
   } else {
-    this.iconDiv_.classList.add('blocklyTreeIconClosedLtr');
-    if (this.workspace_.RTL) {
-      this.iconDiv_.classList.add('blocklyTreeIconClosedRtl');
-    } else {
-      this.iconDiv_.classList.add('blocklyTreeIconClosedLtr');
-    }
-    this.iconDiv_.classList.remove('blocklyTreeIconOpen');
     this.subCategoriesDiv_.style.display = 'none';
+    this.closeIcon_(this.iconDiv_);
   }
   // TODO: Look into this. We were using Blockly.svgResize(this.workspace_) before.
   // TODO: Look into Blockly.svgResize(this.workspace_) it creates line btwn toolbox and flyout.
   this.parentToolbox_.position();
+};
+
+/**
+ * Adds appropriate classes to display an open icon.
+ * @param {HTMLDivElement} iconDiv The div that holds the icon.
+ * @private
+ */
+Blockly.ToolboxCategory.prototype.openIcon_ = function(iconDiv) {
+  // TODO: This breaks if we call addClass before removeClass when we have classes like (fa fa-arrow-down, fa fa-arrow-up)
+  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['closedIcon']);
+  Blockly.utils.dom.addClass(iconDiv, this.classConfig_['openIcon']);
+};
+
+/**
+ * Adds appropriate classes to display a closed icon.
+ * @param {HTMLDivElement} iconDiv The div that holds the icon.
+ * @private
+ */
+Blockly.ToolboxCategory.prototype.closeIcon_ = function(iconDiv) {
+  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['openIcon']);
+  Blockly.utils.dom.addClass(iconDiv, this.classConfig_['closedIcon']);
+};
+
+/**
+ * Gets the name of the category.
+ * @return {string} The name of the category.
+ */
+Blockly.ToolboxCategory.prototype.getName = function() {
+  return this.name_;
 };
 
 /**

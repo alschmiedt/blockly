@@ -130,7 +130,7 @@ Blockly.utils.dom.removeClass = function(element, className) {
   }
   var classList = classes.split(/\s+/);
   for (var i = 0; i < classList.length; i++) {
-    if (!classList[i] || classList[i] == className) {
+    if (!classList[i] || className.split(/\s+/).indexOf(classList[i]) > -1) {
       classList.splice(i, 1);
       i--;
     }

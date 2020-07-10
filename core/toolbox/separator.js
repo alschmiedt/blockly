@@ -26,7 +26,26 @@ Blockly.ToolboxSeparator = function(toolboxSeparatorDef, toolbox) {
    * @type {!Blockly.IToolbox}
    * @protected
    */
-  this.parentToolbox = toolbox;
+  this.parentToolbox_ = toolbox;
+
+  /**
+   * The workspace of the parent toolbox.
+   * @type {!Blockly.WorkspaceSvg}
+   * @protected
+   */
+  this.workspace_ = this.parentToolbox_.getWorkspace();
+
+  /**
+   * The config for all the separator classes.
+   * @type {Object}
+   * @protected
+   */
+  this.classConfig_ = {
+
+  };
+
+  Blockly.utils.object.mixin(this.classConfig_, toolboxSeparatorDef['classConfig']);
+
 };
 
 /**
@@ -36,9 +55,9 @@ Blockly.ToolboxSeparator = function(toolboxSeparatorDef, toolbox) {
 Blockly.ToolboxSeparator.prototype.createDom = function() {
   // TODO: Figure out what spans and divs are actually necessary for this.
   var treeSeparatorContainer = document.createElement('div');
-  if (this.parentToolbox.isHorizontal()) {
+  if (this.parentToolbox_.isHorizontal()) {
     treeSeparatorContainer.classList.add('blocklyTreeSeparatorHorizontal');
-    if (this.parentToolbox.isRtl()) {
+    if (this.workspace_.RTL) {
       treeSeparatorContainer.classList.add('blocklyHorizontalTreeRtl');
     } else {
       treeSeparatorContainer.classList.add('blocklyHorizontalTree');
@@ -50,7 +69,16 @@ Blockly.ToolboxSeparator.prototype.createDom = function() {
 };
 
 /**
- * Dispose of this separator.
+ * Gets the name of this toolbox item. Used for events.
+ * ????
+ * @return {string} The name of this toolbox item.
+ */
+Blockly.ToolboxSeparator.prototype.getName = function() {
+  return 'separator';
+};
+
+/**
+ * ???
  */
 Blockly.ToolboxSeparator.prototype.setSelected = function() {
   // TODO: Figure out what to do here.

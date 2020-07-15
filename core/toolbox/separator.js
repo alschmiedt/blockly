@@ -19,8 +19,16 @@ goog.provide('Blockly.ToolboxSeparator');
  *     needed
  * @param {!Blockly.IToolbox} toolbox The parent toolbox for the category.
  * @constructor
+ * @implements {Blockly.IToolboxItem}
  */
 Blockly.ToolboxSeparator = function(toolboxSeparatorDef, toolbox) {
+
+  /**
+   * The type.
+   * @type {string}
+   */
+  this.type = toolboxSeparatorDef['kind'].toUpperCase();
+
   /**
    * The toolbox this category belongs to.
    * @type {!Blockly.IToolbox}
@@ -34,6 +42,13 @@ Blockly.ToolboxSeparator = function(toolboxSeparatorDef, toolbox) {
    * @protected
    */
   this.workspace_ = this.parentToolbox_.getWorkspace();
+
+  /**
+   * The id for the separator.
+   * @type {string}
+   * @private
+   */
+  this.id_ = Blockly.utils.genUid();
 
   /**
    * The config for all the separator classes.
@@ -69,13 +84,36 @@ Blockly.ToolboxSeparator.prototype.createDom = function() {
 };
 
 /**
+ * Gets a unique identifier for the separator.
+ * @return {string} The id of the separator.
+ * @public
+ */
+Blockly.ToolboxSeparator.prototype.getId = function() {
+  return this.id_;
+};
+
+/**
  * Gets the name of this toolbox item. Used for events.
- * ????
  * @return {string} The name of this toolbox item.
  */
 Blockly.ToolboxSeparator.prototype.getName = function() {
   return 'separator';
 };
+
+
+Blockly.ToolboxSeparator.prototype.hasChildren = function() {
+  return false;
+};
+
+/**
+ * Whether this separator is visible.
+ * TODO: This feels weird. Maybe should be selectable?
+ * @return {boolean} True if the category is visible, false otherwise.
+ */
+Blockly.ToolboxSeparator.prototype.isVisible = function() {
+  return false;
+};
+
 
 /**
  * ???

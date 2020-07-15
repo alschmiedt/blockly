@@ -93,7 +93,13 @@ Blockly.IToolbox.prototype.refreshSelection;
 Blockly.IToolbox.prototype.setVisible;
 
 /**
- * Select the first toolbox category if no category is selected.
+ * Select the toolbox item by it's position in the toolbox.
  * @return {void}
  */
-Blockly.IToolbox.prototype.selectFirstCategory;
+Blockly.IToolbox.prototype.selectItemByPosition;
+
+/**
+ * Gets the currently selected item in the toolbox.
+ * @return {void}
+ */
+Blockly.IToolbox.prototype.getSelected;

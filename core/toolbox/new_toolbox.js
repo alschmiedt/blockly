@@ -35,6 +35,13 @@ Blockly.NewToolbox = function(workspace) {
   this.workspace_ = workspace;
 
   /**
+   * The JSON describing the contents of this toolbox.
+   * @type {Blockly.utils.toolbox.Toolbox[]}
+   * @protected
+   */
+  this.toolboxDef_ = workspace.options.languageTree;
+
+  /**
    * Whether the toolbox should be laid out horizontally.
    * @type {boolean}
    * @private
@@ -43,37 +50,63 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The html container for the toolbox.
+   * TODO: Do we consider this to be a public API from toolbox?
    * @type {HTMLDivElement}
    */
   this.HtmlDiv = null;
 
   /**
+   * The html container for the contents of a toolbox.
+   * @type {HTMLDivElement}
+   * @protected
+   */
+  this.contentsDiv_ = null;
+
+  /**
    * The width of the toolbox.
    * @type {number}
+   * @protected
    */
-  this.width = 0;
+  this.width_ = 0;
 
   /**
    * The height of the toolbox.
    * @type {number}
+   * @protected
    */
-  this.height = 0;
+  this.height_ = 0;
 
   /**
    * Is RTL vs LTR.
+   * TODO: Do we consider this to be a public API from toolbox?
    * @type {boolean}
    */
   this.RTL = workspace.options.RTL;
 
   /**
    * The list of items in the toolbox.
-   * TODO: Create another array to hold the blocks if it is a simple toolbox.
-   * @type {Array<Blockly.ToolboxItem>}
+   * @type {Array.<Blockly.IToolboxItem>}
+   * @protected
    */
-  this.toolboxItems = [];
+  this.contents_ = [];
+
+  /**
+   * The flyout for the toolbox.
+   * @type {Blockly.Flyout}
+   * @private
+   */
+  this.flyout_ = null;
+
+  /**
+   * The id of the toolbox item as the key and the toolbox item as the value.
+   * @type {Object<string, Blockly.IToolboxItem>}
+   * @protected
+   */
+  this.toolboxItemIds_ = {};
 
   /**
    * Position of the toolbox and flyout relative to the workspace.
+   * TODO: Do we consider this to be a public API from toolbox?
    * @type {number}
    */
   this.toolboxPosition = workspace.options.toolboxPosition;
@@ -84,39 +117,70 @@ Blockly.NewToolbox = function(workspace) {
    * @protected
    */
   this.selectedItem_ = null;
+
+  /**
+   * Array holding info needed to unbind events.
+   * Used for disposing.
+   * Ex: [[node, name, func], [node, name, func]].
+   * @type {!Array.<Array<?>>}
+   * @private
+   */
+  this.boundEvents_ = [];
+
+  /**
+   * The config for all the toolbox css classes.
+   * TODO: Can't Do this until we change the toolbox to return an object instead of an array.
+   * @type {Object}
+   * @protected
+   */
+  // this.classConfig_ = {
+  //   'container': 'blocklyToolboxDiv',
+  //   'contents': 'blocklyToolboxContents',
+  // };
+  // Blockly.utils.object.mixin(this.classConfig_, this.toolboxDef_['classConfig']);
 };
 
 /**
- * Initializes the toolbox.
+ * Initializes the toolbox
  */
 Blockly.NewToolbox.prototype.init = function() {
   var workspace = this.workspace_;
-  var svg = this.workspace_.getParentSvg();
+  var svg = workspace.getParentSvg();
 
-  this.HtmlDiv = this.createContainer_(workspace);
-  this.contentsDiv = this.createContentsContainer_();
-  if (this.isHorizontal()) {
-    this.contentsDiv.style.flexDirection = 'row';
-  }
-  this.HtmlDiv.appendChild(this.contentsDiv);
+  this.flyout_ = this.createFlyout_();
 
-  svg.parentNode.insertBefore(this.HtmlDiv, svg);
+  this.createDom_(this.workspace_);
 
   var themeManager = workspace.getThemeManager();
   themeManager.subscribe(this.HtmlDiv, 'toolboxBackgroundColour',
       'background-color');
   themeManager.subscribe(this.HtmlDiv, 'toolboxForegroundColour', 'color');
 
-  // Clicking on toolbox closes popups.
-  Blockly.bindEventWithChecks_(this.HtmlDiv, 'mousedown', this, this.onClick_,
-      /* opt_noCaptureIdentifier */ false, /* opt_noPreventDefault */ true);
 
-  this.flyout_ = this.createFlyout_();
   // Insert the flyout after the workspace.
   Blockly.utils.dom.insertAfter(this.flyout_.createDom('svg'), svg);
   this.flyout_.init(workspace);
+};
 
-  this.render(workspace.options.languageTree);
+/**
+ * Create the dom for the toolbox.
+ * @param {!Blockly.WorkspaceSvg} workspace The workspace this toolbox is on.
+ * @protected
+ */
+Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
+  var svg = workspace.getParentSvg();
+
+  this.HtmlDiv = this.createContainer_(workspace);
+  this.HtmlDiv.tabIndex = 0;
+
+  this.contentsDiv_ = this.createContentsContainer_();
+  this.addContents_(this.toolboxDef_);
+
+  this.HtmlDiv.appendChild(this.contentsDiv_);
+
+  svg.parentNode.insertBefore(this.HtmlDiv, svg);
+
+  this.addToolboxListeners_();
 };
 
 /**
@@ -127,7 +191,8 @@ Blockly.NewToolbox.prototype.init = function() {
  */
 Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
   var toolboxContainer = document.createElement('div');
-  toolboxContainer.className = 'blocklyToolboxDiv blocklyNonSelectable';
+  Blockly.utils.dom.addClass(toolboxContainer, 'blocklyToolboxDiv');
+  Blockly.utils.dom.addClass(toolboxContainer, 'blocklyNonSelectable');
   toolboxContainer.setAttribute('dir', workspace.RTL ? 'RTL' : 'LTR');
   return toolboxContainer;
 };
@@ -139,8 +204,29 @@ Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
  */
 Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
   var contentsContainer = document.createElement('div');
-  contentsContainer.classList.add('blocklyToolboxContents');
+  // TODO: Should I be using addClass?
+  Blockly.utils.dom.addClass(contentsContainer, 'blocklyToolboxContents');
+  if (this.isHorizontal()) {
+    contentsContainer.style.flexDirection = 'row';
+  }
   return contentsContainer;
+};
+
+/**
+ * Add event listeners to the toolbox HtmlDiv.
+ * @protected
+ */
+Blockly.NewToolbox.prototype.addToolboxListeners_ = function() {
+  // Clicking on toolbox closes popups.
+  var clickEvent = Blockly.bindEventWithChecks_(this.HtmlDiv, 'mousedown', this,
+      this.onClick_, /* opt_noCaptureIdentifier */ false,
+      /* opt_noPreventDefault */ true);
+  this.boundEvents_.push(clickEvent);
+
+  var keyDownEvent = Blockly.bindEventWithChecks_(this.HtmlDiv, 'keydown',
+      this, this.onKeyDown_, /* opt_noCaptureIdentifier */ false,
+      /* opt_noPreventDefault */ true);
+  this.boundEvents_.push(keyDownEvent);
 };
 
 /**
@@ -153,10 +239,49 @@ Blockly.NewToolbox.prototype.onClick_ = function(e) {
     // Close flyout.
     Blockly.hideChaff(false);
   } else {
+    var srcElement = e.srcElement;
+    var itemId = srcElement.getAttribute('data-id');
+    if (itemId) {
+      var item = this.getToolboxItemById(itemId);
+      this.setSelectedItem(item);
+      if (item.onClick) {
+        item.onClick();
+      }
+    }
     // Just close popups.
     Blockly.hideChaff(true);
   }
   Blockly.Touch.clearTouchIdentifier();  // Don't block future drags.
+};
+
+/**
+ * Handles key down events for the toolbox.
+ * @param {KeyboardEvent} e The key down event.
+ * @private
+ */
+Blockly.NewToolbox.prototype.onKeyDown_ = function(e) {
+  var handled = false;
+  switch (e.keyCode) {
+    case Blockly.utils.KeyCodes.DOWN:
+      handled = this.selectNext();
+      break;
+    case Blockly.utils.KeyCodes.UP:
+      handled = this.selectPrevious();
+      break;
+    case Blockly.utils.KeyCodes.LEFT:
+      handled = this.selectParent();
+      break;
+    case Blockly.utils.KeyCodes.RIGHT:
+      handled = this.selectChild();
+      break;
+    default:
+      handled = false;
+      break;
+  }
+
+  if (handled) {
+    e.preventDefault();
+  }
 };
 
 /**
@@ -205,28 +330,19 @@ Blockly.NewToolbox.prototype.createFlyout_ = function() {
  * insertToolboxItem.
  * @param {Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef Array holding objects
  *    containing information on the contents of the toolbox.
+ *    @protected
  */
-Blockly.NewToolbox.prototype.render = function(toolboxDef) {
+Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
   for (var i = 0, childIn; (childIn = toolboxDef[i]); i++) {
+    // TODO: Add classes to registry so we can avoid this switch statement.
     switch (childIn['kind'].toUpperCase()) {
       case 'CATEGORY':
         var category = new Blockly.ToolboxCategory(childIn, this);
-        this.toolboxItems.push(category);
-
-        var categoryDom = category.createDom();
-        this.contentsDiv.appendChild(categoryDom);
+        this.insertToolboxItem(category);
         break;
       case 'SEP':
         var separator = new Blockly.ToolboxSeparator(childIn, this);
-        this.toolboxItems.push(separator);
-
-        var separatorDom = separator.createDom();
-        this.contentsDiv.appendChild(separatorDom);
-        break;
-      case 'BLOCK':
-      case 'SHADOW':
-      case 'LABEL':
-      case 'BUTTON':
+        this.insertToolboxItem(separator);
         break;
       default:
         // TODO: Handle someone adding a custom component.
@@ -234,9 +350,45 @@ Blockly.NewToolbox.prototype.render = function(toolboxDef) {
   }
 };
 
-// TODO: Update this.
+/**
+ * Updates the
+ * @param toolboxDef
+ */
+Blockly.NewToolbox.prototype.render = function(toolboxDef) {
+  this.toolboxDef_ = toolboxDef;
+  // TODO: THis whole thing is suspect. Check if there is a better way to swap out contents.
+  if (this.contentsDiv_) {
+    Blockly.utils.dom.removeNode(this.contentsDiv_);
+  }
+  this.contentsDiv_ = this.createContentsContainer_();
+  this.addContents_(toolboxDef);
+  this.HtmlDiv.appendChild(this.contentsDiv_);
+  this.position();
+};
+
+/**
+ * Add an item to the end of the toolbox.
+ * TODO: Add ability to insert at a position
+ * @param {!Blockly.IToolboxItem} toolboxItem The item in the toolbox.
+ */
+Blockly.NewToolbox.prototype.insertToolboxItem = function(toolboxItem) {
+  this.contents_.push(toolboxItem);
+  this.toolboxItemIds_[toolboxItem.getId()] = toolboxItem;
+  if (toolboxItem.hasChildren()) {
+    for (var i = 0; i < toolboxItem.contents_.length; i++) {
+      var child = toolboxItem.contents_[i];
+      this.contents_.push(child);
+      this.toolboxItemIds_[child.getId()] = child;
+    }
+  }
+  this.contentsDiv_.appendChild(toolboxItem.createDom());
+};
+
+/**
+ * Return the deletion rectangle for this toolbox.
+ * @return {Blockly.utils.Rect} Rectangle in which to delete.
+ */
 Blockly.NewToolbox.prototype.getClientRect = function() {
-  // TODO: Fix deleting clicking on the category.
   if (!this.HtmlDiv) {
     return null;
   }
@@ -266,25 +418,13 @@ Blockly.NewToolbox.prototype.getClientRect = function() {
 };
 
 /**
- * Get whether or not the toolbox is horizontal.
- * @return {boolean} True if the toolbox is horizontal, false if the toolbox is
- *     vertical.
+ * Gets the toolbox item with the given id.
+ * @param {string} id The id of the toolbox item.
+ * @return {Blockly.IToolboxItem} The toolbox item with the given id, or null if
+ *     no item exists.
  */
-Blockly.NewToolbox.prototype.isHorizontal = function() {
-  return this.horizontalLayout_ == true;
-};
-
-/**
- * Dispose of this toolbox.
- */
-Blockly.NewToolbox.prototype.dispose = function() {
-  this.flyout_.dispose();
-  for (var i = 0; i < this.toolboxItems.length; i++) {
-    var toolboxItem = this.toolboxItems[i];
-    toolboxItem.dispose();
-  }
-  this.workspace_.getThemeManager().unsubscribe(this.HtmlDiv);
-  Blockly.utils.dom.removeNode(this.HtmlDiv);
+Blockly.NewToolbox.prototype.getToolboxItemById = function(id) {
+  return this.toolboxItemIds_[id];
 };
 
 /**
@@ -292,7 +432,7 @@ Blockly.NewToolbox.prototype.dispose = function() {
  * @return {number} The width of the toolbox.
  */
 Blockly.NewToolbox.prototype.getWidth = function() {
-  return this.width;
+  return this.width_;
 };
 
 /**
@@ -300,7 +440,7 @@ Blockly.NewToolbox.prototype.getWidth = function() {
  * @return {number} The width of the toolbox.
  */
 Blockly.NewToolbox.prototype.getHeight = function() {
-  return this.height;
+  return this.height_;
 };
 
 /**
@@ -309,6 +449,23 @@ Blockly.NewToolbox.prototype.getHeight = function() {
  */
 Blockly.NewToolbox.prototype.getFlyout = function() {
   return this.flyout_;
+};
+
+/**
+ * Gets the workspace for the toolbox.
+ * @return {!Blockly.WorkspaceSvg} The parent workspace for the toolbox.
+ */
+Blockly.NewToolbox.prototype.getWorkspace = function() {
+  return this.workspace_;
+};
+
+/**
+ * Get whether or not the toolbox is horizontal.
+ * @return {boolean} True if the toolbox is horizontal, false if the toolbox is
+ *     vertical.
+ */
+Blockly.NewToolbox.prototype.isHorizontal = function() {
+  return this.horizontalLayout_;
 };
 
 /**
@@ -326,7 +483,7 @@ Blockly.NewToolbox.prototype.position = function() {
     toolboxDiv.style.left = '0';
     toolboxDiv.style.height = 'auto';
     toolboxDiv.style.width = '100%';
-    this.height = toolboxDiv.offsetHeight;
+    this.height_ = toolboxDiv.offsetHeight;
     if (this.toolboxPosition == Blockly.TOOLBOX_AT_TOP) {  // Top
       toolboxDiv.style.top = '0';
     } else {  // Bottom
@@ -339,7 +496,7 @@ Blockly.NewToolbox.prototype.position = function() {
       toolboxDiv.style.left = '0';
     }
     toolboxDiv.style.height = '100%';
-    this.width = toolboxDiv.offsetWidth;
+    this.width_ = toolboxDiv.offsetWidth;
   }
   this.flyout_.position();
 };
@@ -356,7 +513,12 @@ Blockly.NewToolbox.prototype.clearSelection = function() {
  * @package
  */
 Blockly.NewToolbox.prototype.refreshTheme = function() {
-
+  for (var i = 0; i < this.contents_.length; i++) {
+    var child = this.contents_[i];
+    if (child.refreshTheme) {
+      child.refreshTheme();
+    }
+  }
 };
 
 /**
@@ -365,8 +527,9 @@ Blockly.NewToolbox.prototype.refreshTheme = function() {
  * procedures.
  */
 Blockly.NewToolbox.prototype.refreshSelection = function() {
-  if (this.selectedItem_ && this.selectedItem_.contents) {
-    this.flyout_.show(this.selectedItem_.contents);
+  if (this.selectedItem_ && !this.selectedItem_.hasChildren() &&
+      this.selectedItem_.contents_) {
+    this.flyout_.show(this.selectedItem_.contents_);
   }
 };
 
@@ -374,13 +537,9 @@ Blockly.NewToolbox.prototype.refreshSelection = function() {
  * Toggles the visibility of the toolbox.
  * @param {boolean} isVisible True if toolbox should be visible.
  */
-Blockly.NewToolbox.prototype.setVisible = function() {};
-
-/**
- * Select the first toolbox category if no category is selected.
- * @package
- */
-Blockly.NewToolbox.prototype.selectFirstCategory = function() {};
+Blockly.NewToolbox.prototype.setVisible = function(isVisible) {
+  this.HtmlDiv.style.display = isVisible ? 'block' : 'none';
+};
 
 /**
  * Set the given item as selected.
@@ -393,26 +552,47 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
     return;
   }
 
-  if (oldItem) {
+  // Do not deselct if the oldItem has children and has been previously clicked on.
+  if (oldItem && (!oldItem.hasChildren() || oldItem != newItem)) {
+    this.selectedItem_ = null;
     oldItem.setSelected(false);
   }
 
-  if (!newItem || oldItem == newItem) {
-    this.selectedItem_ = null;
-    this.flyout_.hide();
-  } else {
+
+  if (newItem && newItem != oldItem ) {
     this.selectedItem_ = newItem;
-    this.selectedItem_.setSelected(true);
-    // If the new item does not have contents close the old flyout.
-    // TODO: This can be fixed to just check the blocks array when I split them up.
-    if (this.selectedItem_.contents && !this.selectedItem_.hasCategories()) {
-      this.flyout_.show(this.selectedItem_.contents);
-      this.flyout_.scrollToStart();
-    } else {
-      this.flyout_.hide();
-    }
+    newItem.setSelected(true);
   }
-  this.createEvent_(oldItem, newItem);
+
+  this.updateFlyout_(oldItem, newItem);
+  this.fireEvent_(oldItem, newItem);
+};
+
+/**
+ * Select the first toolbox category if no category is selected.
+ * @param {number} position The position of the item to select.
+ * @public
+ */
+Blockly.NewToolbox.prototype.selectItemByPosition = function(position) {
+  if (position > -1 && position < this.contents_.length) {
+    this.setSelectedItem(this.contents_[position]);
+  }
+};
+
+/**
+ * Update the flyout.
+ * @param {Blockly.IToolboxItem} oldItem The previously selected toolbox item.
+ * @param {Blockly.IToolboxItem} newItem The currently selected toolbox item.
+ * @private
+ */
+Blockly.NewToolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
+  if (oldItem == newItem || !newItem || !newItem.contents_ ||
+      newItem.hasChildren()) {
+    this.flyout_.hide();
+  } else if (newItem.contents_) {
+    this.flyout_.show(newItem.contents_);
+    this.flyout_.scrollToStart();
+  }
 };
 
 /**
@@ -421,7 +601,7 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
  * @param {Blockly.IToolboxItem} newItem The currently selected toolbox item.
  * @private
  */
-Blockly.NewToolbox.prototype.createEvent_ = function(oldItem, newItem) {
+Blockly.NewToolbox.prototype.fireEvent_ = function(oldItem, newItem) {
   var oldElement = oldItem && oldItem.getName();
   var newElement = newItem && newItem.getName();
   // In this case the toolbox closes, so the newElement should be null.
@@ -436,33 +616,145 @@ Blockly.NewToolbox.prototype.createEvent_ = function(oldItem, newItem) {
 };
 
 /**
- * Selects the next toolbox item.
+ * Handles the given Blockly action on a toolbox.
+ * This is only triggered when keyboard accessibility mode is enabled.
+ * @param {!Blockly.Action} action The action to be handled.
+ * @return {boolean} True if the field handled the action, false otherwise.
+ * @package
+ */
+Blockly.NewToolbox.prototype.onBlocklyAction = function(action) {
+  var selected = this.selectedItem_;
+  if (!selected) {
+    return false;
+  }
+  switch (action.name) {
+    case Blockly.navigation.actionNames.PREVIOUS:
+      return this.selectPrevious();
+    case Blockly.navigation.actionNames.OUT:
+      return this.selectParent();
+    case Blockly.navigation.actionNames.NEXT:
+      return this.selectNext();
+    case Blockly.navigation.actionNames.IN:
+      return this.selectChild();
+    default:
+      return false;
+  }
+};
+
+/**
+ * Selects the parent if it exists, or closes the current item.
+ * @return {boolean} True if a parent category was selected, false otherwise.
+ * @public
+ */
+Blockly.NewToolbox.prototype.selectParent = function() {
+  if (!this.selectedItem_) {
+    return false;
+  }
+
+  if (this.selectedItem_.hasChildren()) {
+    this.selectedItem_.setExpanded(false);
+    return true;
+  } else if (this.selectedItem_.getParent()) {
+    this.setSelectedItem(this.selectedItem_.getParent());
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Selects the previous visible toolbox item.
+ * @return {boolean} True if a child category was selected, false otherwise.
+ * @public
+ */
+Blockly.NewToolbox.prototype.selectChild = function() {
+  if (!this.selectedItem_) {
+    return false;
+  }
+
+  if (this.selectedItem_.hasChildren() && !this.selectedItem_.isExpanded()) {
+    this.selectedItem_.setExpanded(true);
+    return true;
+  } else if (this.selectedItem_.hasChildren()) {
+    this.selectNext();
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Selects the next visible toolbox item.
+ * @return {boolean} True if a next category was selected, false otherwise.
+ * @public
  */
 Blockly.NewToolbox.prototype.selectNext = function() {
-  var items = this.toolboxItems;
-  var nextItemIdx = items.indexOf(this.selectedItem_) + 1;
-  if (nextItemIdx < items.length) {
-    this.setSelectedItem(items[nextItemIdx]);
+  if (!this.selectedItem_) {
+    return false;
   }
+
+  var nextItemIdx = this.contents_.indexOf(this.selectedItem_) + 1;
+  if (nextItemIdx > -1 && nextItemIdx < this.contents_.length) {
+    var nextItem = this.contents_[nextItemIdx];
+    while (nextItem && !nextItem.isVisible()) {
+      nextItem = this.contents_[++nextItemIdx];
+    }
+    if (nextItem && nextItem.isVisible()) {
+      this.setSelectedItem(nextItem);
+      return true;
+    }
+  }
+  return false;
 };
 
 /**
- * Selects the previous toolbox item.
+ * Selects the previous visible toolbox item.
+ * @return {boolean} True if a previous category was selected, false otherwise.
+ * @public
  */
 Blockly.NewToolbox.prototype.selectPrevious = function() {
-  var items = this.toolboxItems;
-  var nextItemIdx = items.indexOf(this.selectedItem_) - 1;
-  if (nextItemIdx > -1) {
-    this.setSelectedItem(items[nextItemIdx]);
+  if (!this.selectedItem_) {
+    return false;
   }
+
+  var prevItemIdx = this.contents_.indexOf(this.selectedItem_) - 1;
+  if (prevItemIdx > -1 && prevItemIdx < this.contents_.length) {
+    var prevItem = this.contents_[prevItemIdx];
+    while (prevItem && !prevItem.isVisible()) {
+      prevItem = this.contents_[--prevItemIdx];
+    }
+    if (prevItem && prevItem.isVisible()) {
+      this.setSelectedItem(this.contents_[prevItemIdx]);
+      return true;
+    }
+  }
+  return false;
 };
 
 /**
- * Gets the workspace for the toolbox.
- * @return {!Blockly.WorkspaceSvg} The parent workspace for the toolbox.
+ * Gets the selected item.
+ * @return {Blockly.IToolboxItem} The selected item, or null if no item is
+ *     currently selected.
  */
-Blockly.NewToolbox.prototype.getWorkspace = function() {
-  return this.workspace_;
+Blockly.NewToolbox.prototype.getSelected = function() {
+  return this.selectedItem_;
+};
+
+/**
+ * Disposes of this toolbox.
+ */
+Blockly.NewToolbox.prototype.dispose = function() {
+  this.flyout_.dispose();
+  for (var i = 0; i < this.contents_.length; i++) {
+    var toolboxItem = this.contents_[i];
+    toolboxItem.dispose();
+  }
+
+  for (var j = 0; j < this.boundEvents_.length; j++) {
+    Blockly.unbindEvent_(this.boundEvents_[j]);
+  }
+  this.boundEvents_ = [];
+
+  this.workspace_.getThemeManager().unsubscribe(this.HtmlDiv);
+  Blockly.utils.dom.removeNode(this.HtmlDiv);
 };
 
 /**
@@ -491,6 +783,14 @@ Blockly.Css.register([
     '-webkit-tap-highlight-color: transparent;', /* issue #1345 */
   '}',
 
+  '.blocklyToolboxDiv:focus {',
+    'outline: none;',
+  '}',
+
+  '.blocklyToolboxCategory {',
+    'padding-bottom: 3px',
+  '};',
+
   '.blocklyToolboxContents {',
     'display: flex;',
     'flex-wrap: wrap;',
@@ -504,13 +804,9 @@ Blockly.Css.register([
   '.blocklyTreeRow {',
     'height: 22px;',
     'line-height: 22px;',
-    'margin-bottom: 3px;',
     'padding-right: 8px;',
     'white-space: nowrap;',
-  '}',
-
-  '.blocklyTreeRow:focus {',
-    'outline: none !important;',
+    'pointer-events: none',
   '}',
 
   '.blocklyHorizontalTree {',
@@ -592,4 +888,4 @@ Blockly.Css.register([
   /* eslint-enable indent */
 ]);
 
-Blockly.registry.register(Blockly.registry.Type.TOOLBOX, 'newToolbox', Blockly.NewToolbox);
+Blockly.registry.register(Blockly.registry.Type.TOOLBOX, 'newtoolbox', Blockly.NewToolbox);

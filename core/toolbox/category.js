@@ -18,6 +18,8 @@ goog.provide('Blockly.ToolboxCategory');
  * @param {!Blockly.utils.toolbox.Category} categoryDef The information needed
  *     to create a category in the toolbox.
  * @param {!Blockly.IToolbox} toolbox The parent toolbox for the category.
+ * @constructor
+ * @implements {Blockly.IToolboxItem}
  */
 Blockly.ToolboxCategory = function(categoryDef, toolbox) {
 
@@ -27,6 +29,13 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
    * @protected
    */
   this.name_ = categoryDef['name'];
+
+  /**
+   * The id for the category.
+   * @type {string}
+   * @private
+   */
+  this.id_ = Blockly.utils.genUid();
 
   /**
    * The toolbox this category belongs to.
@@ -43,21 +52,29 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
   this.workspace_ = this.parentToolbox_.getWorkspace();
 
   /**
-   * The contents of the category.
-   * TODO: Figure out where we should be parsing this. Seems like it shouldn't
-   * TODO: have to happen every time someone opens the flyout.
-   * TODO: This would ideally be just IToolboxItem.
-   * @type {Array<Blockly.utils.toolbox.Block|
-   *     Blockly.utils.toolbox.Separator|
-   *     Blockly.utils.toolbox.Button|
-   *     Blockly.utils.toolbox.Label|
-   *     Blockly.utils.toolbox.Category>}
+   * The definition used to create the category.
+   * @type {!Blockly.utils.toolbox.Category}
+   * @protected
    */
-  this.contents = categoryDef['contents'];
-  // TODO: Add dynamic category type
-  if (categoryDef['custom']) {
-    this.contents = categoryDef['custom'];
-  }
+  this.categoryDef_ = categoryDef;
+
+  var contents = categoryDef['contents'];
+
+  /**
+   * True if this category has sub categories, false otherwise.
+   * @type {boolean}
+   * @private
+   */
+  this.hasChildren_ = contents && contents.length &&
+    typeof contents != 'string' &&
+    contents[0].kind.toUpperCase() == 'CATEGORY';
+
+  /**
+   * Parse the contents for this category.
+   * @type {string|Array<!Blockly.IToolboxItem>|Array<Blockly.utils.toolbox.Toolbox>}
+   * @protected
+   */
+  this.contents_ = this.parseContents_(categoryDef, this.hasChildren_);
 
   /**
    * The colour of the category.
@@ -82,39 +99,17 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
 
   /**
    * The html element for the toolbox icon.
-   * @type {HTMLDivElement}
-   * @private
-   */
-  this.iconDiv_ = null;
-
-  /**
-   * A handle to use to unbind the click event for this category.
-   * Data returned from Blockly.bindEvent_.
-   * @type {?Blockly.EventData}
-   * @private
-   */
-  this.clickEvent_ = null;
-
-  /**
-   * A handle to use to unbind the key down event for this category.
-   * Data returned from Blockly.bindEvent_.
-   * @type {?Blockly.EventData}
-   * @private
-   */
-  this.keyDownEvent_ = null;
-
-  /**
-   * Whether or not the category should display it's children.
-   * @type {boolean}
+   * @type {HTMLSpanElement}
    * @protected
    */
-  this.expanded_ = true;
+  this.iconDiv_ = null;
 
   // TODO: External users would have to decide what class to create.
   var closedIcon = this.workspace_.RTL ?
       'blocklyTreeIconClosedRtl' : 'blocklyTreeIconClosedLtr';
+
   /**
-   * The config for all the category classes.
+   * The config for all the category css classes.
    * @type {Object}
    * @protected
    */
@@ -130,21 +125,75 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
   };
 
   Blockly.utils.object.mixin(this.classConfig_, categoryDef['classConfig']);
+
+  /**
+   * Whether or not the category should display it's children.
+   * @type {boolean}
+   * @protected
+   */
+  this.expanded_ = categoryDef['expanded'] == 'true' || categoryDef['expanded'];
+
+  /**
+   * True if the category is visible, false otherwise.
+   * @type {boolean}
+   * @private
+   */
+  this.isVisible_ = true;
+
+  /**
+   * The parent of the category.
+   * @type {Blockly.ToolboxCategory}
+   */
+  this.parent = null;
+
+};
+
+
+
+/**
+ * Parse the contents array depending on if the category has children, is a
+ * dynamic category, or if it's contents are meant to be shown in the flyout.
+ * @param {Blockly.utils.toolbox.Category} categoryDef The user given information
+ *     about the category.
+ * @param {boolean} hasChildren True if this category has sub categories, false
+ *     otherwise.
+ * TODO: Something is a bit weird with types. We should have a typedef for a flyout?
+ * TODO: Should the info be passed in?
+ * @return {string|Array<!Blockly.IToolboxItem>|Array<Blockly.utils.toolbox.Toolbox>}
+ *     The contents for this category.
+ * @private
+ */
+Blockly.ToolboxCategory.prototype.parseContents_ = function(categoryDef, hasChildren) {
+  var toolboxItems = [];
+  var contents = categoryDef['contents'];
+  if (hasChildren) {
+    for (var i = 0; i < contents.length; i++) {
+      var child = new Blockly.ToolboxCategory(contents[i], this.parentToolbox_);
+      child.setParent(this);
+      toolboxItems.push(child);
+    }
+  } else if (categoryDef['custom']) {
+    toolboxItems = categoryDef['custom'];
+  } else {
+    toolboxItems = contents;
+  }
+
+  return toolboxItems;
 };
 
 /**
  * Creates the dom for a toolbox category.
  * @return {HTMLDivElement} The div for the category.
+ * @public
  */
 Blockly.ToolboxCategory.prototype.createDom = function() {
   this.htmlDiv_ = document.createElement('div');
   Blockly.utils.dom.addClass(this.htmlDiv_, this.classConfig_['container']);
+  this.htmlDiv_.setAttribute('data-id', this.id_);
 
   this.rowDiv_ = document.createElement('div');
   Blockly.utils.dom.addClass(this.rowDiv_, this.classConfig_['row']);
   this.htmlDiv_.appendChild(this.rowDiv_);
-  // TODO: Should this be on the htmlDiv_ or the rowDiv_?
-  this.rowDiv_.tabIndex = 0;
 
   if (this.parentToolbox_.isHorizontal()) {
     // TODO: All these classes do is add margins. Do we want to keep this?
@@ -158,60 +207,49 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
   var toolboxLabel = this.createLabelSpan_();
   this.rowDiv_.appendChild(toolboxLabel);
 
-  if (this.hasCategories()) {
-    this.subCategoriesDiv_ = this.createSubCategories_(this.contents);
+  if (this.hasChildren()) {
+    this.subCategoriesDiv_ = this.createSubCategories_(this.contents_);
     this.htmlDiv_.appendChild(this.subCategoriesDiv_);
   }
+  this.rowDiv_.style.pointerEvents = 'none';
 
-  this.addColour_(this.rowDiv_, this.colour_);
+  this.addColour_(this.colour_);
 
   this.setExpanded(this.expanded_);
-
-  this.clickEvent_ = Blockly.bindEvent_(
-      this.rowDiv_, 'click', this, this.onClick_);
-
-  this.keyDownEvent_ = Blockly.bindEvent_(
-      this.rowDiv_, 'keydown', this, this.onKeyDown_);
 
   return this.htmlDiv_;
 };
 
 /**
  * Add the strip of colour to the toolbox category.
- * @param {HTMLDivElement} rowDiv The div to add the colour to.
  * @param {string} colour The category colour.
- * @private
+ * @package
  */
-Blockly.ToolboxCategory.prototype.addColour_ = function(rowDiv, colour) {
+Blockly.ToolboxCategory.prototype.addColour_ = function(colour) {
   if (colour) {
     var border = '8px solid ' + (colour || '#ddd');
     if (this.workspace_.RTL) {
-      rowDiv.style.borderRight = border;
+      this.rowDiv_.style.borderRight = border;
     } else {
-      rowDiv.style.borderLeft = border;
+      this.rowDiv_.style.borderLeft = border;
     }
   }
 };
 
 /**
  * Create the dom for all sub categories.
- * @param {Blockly.utils.toolbox.Toolbox} contents The contents of the category.
+ * @param {Blockly.utils.toolbox.Toolbox} contents The category contents.
  * @return {HTMLDivElement} The div holding all the subcategories.
- * @private
+ * @protected
  */
 Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
   var contentsContainer = document.createElement('div');
   Blockly.utils.dom.addClass(contentsContainer, this.classConfig_['contents']);
-  if (this.workspace_.RTL) {
-    contentsContainer.style.paddingRight = '19px';
-  } else {
-    contentsContainer.style.paddingLeft = '19px';
-  }
+  this.workspace_.RTL ? contentsContainer.style.paddingRight = '19px' :
+      contentsContainer.style.paddingLeft = '19px';
 
   for (var i = 0; i < contents.length; i++) {
-    // TODO: This should check the type of toolbox item before creating.
-    var child = this.contents[i];
-    var newCategory = new Blockly.ToolboxCategory(child, this.parentToolbox_);
+    var newCategory = this.contents_[i];
     var dom = newCategory.createDom();
     contentsContainer.appendChild(dom);
   }
@@ -227,7 +265,7 @@ Blockly.ToolboxCategory.prototype.createIconSpan_ = function() {
   var toolboxIcon = document.createElement('span');
   if (!this.parentToolbox_.isHorizontal()) {
     Blockly.utils.dom.addClass(toolboxIcon, this.classConfig_['icon']);
-    if (this.hasCategories()) {
+    if (this.hasChildren()) {
       toolboxIcon.style.visibility = 'visible';
     }
   }
@@ -247,7 +285,6 @@ Blockly.ToolboxCategory.prototype.createLabelSpan_ = function() {
   Blockly.utils.dom.addClass(toolboxLabel, this.classConfig_['label']);
   return toolboxLabel;
 };
-
 
 /**
  * Add either the colour or the style for a category.
@@ -311,7 +348,7 @@ Blockly.ToolboxCategory.prototype.parseColour_ = function(colourValue) {
     } else {
       var hex = Blockly.utils.colour.parse(colour);
       if (hex) {
-        return Blockly.utils.colour.parse(colour);
+        return hex;
       } else {
         console.warn('Toolbox category "' + this.name_ +
             '" has unrecognized colour attribute: ' + colour);
@@ -324,18 +361,56 @@ Blockly.ToolboxCategory.prototype.parseColour_ = function(colourValue) {
 /**
  * Whether or not this category has sub categories.
  * @return {boolean} True if this category has sub categories, false otherwise.
+ * @public
  */
-Blockly.ToolboxCategory.prototype.hasCategories = function() {
-  // TODO: I think we can store this at the beginning.
-  // TODO: Rename to hasChildren?
-  return this.contents && this.contents.length &&
-    typeof this.contents != 'string' &&
-    this.contents[0].kind.toUpperCase() == 'CATEGORY';
+Blockly.ToolboxCategory.prototype.hasChildren = function() {
+  return this.hasChildren_;
+};
+
+/**
+ * Event listener for when the category is clicked.
+ * @param {Event} e Click event to handle.
+ * @public
+ */
+Blockly.ToolboxCategory.prototype.onClick = function(e) {
+  // TODO: expanded and set selected are a bit weird. Seems like they are somewhat similar?
+  this.setExpanded(!this.expanded_);
+};
+
+/**
+ * Adds appropriate classes to display an open icon.
+ * @param {HTMLSpanElement} iconDiv The div that holds the icon.
+ * @private
+ */
+Blockly.ToolboxCategory.prototype.openIcon_ = function(iconDiv) {
+  // TODO: This breaks if we call addClass before removeClass when we have classes like (fa fa-arrow-down, fa fa-arrow-up)
+  // TODO: Could I instead just use .className?
+  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['closedIcon']);
+  Blockly.utils.dom.addClass(iconDiv, this.classConfig_['openIcon']);
+};
+
+/**
+ * Adds appropriate classes to display a closed icon.
+ * @param {HTMLSpanElement} iconDiv The div that holds the icon.
+ * @private
+ */
+Blockly.ToolboxCategory.prototype.closeIcon_ = function(iconDiv) {
+  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['openIcon']);
+  Blockly.utils.dom.addClass(iconDiv, this.classConfig_['closedIcon']);
+};
+
+/**
+ * Updates the colour for this category.
+ */
+Blockly.ToolboxCategory.prototype.refreshTheme = function() {
+  this.colour_ = this.getColour_(this.categoryDef_);
+  this.addColour_(this.colour_);
 };
 
 /**
  * Set the current category as selected.
  * @param {boolean} isSelected True if this category is selected, false otherwise.
+ * @public
  */
 Blockly.ToolboxCategory.prototype.setSelected = function(isSelected) {
   if (isSelected) {
@@ -348,21 +423,12 @@ Blockly.ToolboxCategory.prototype.setSelected = function(isSelected) {
 };
 
 /**
- * Event listener for when the category is clicked.
- * @param {Event} e Click event to handle.
- * @protected
- */
-Blockly.ToolboxCategory.prototype.onClick_ = function(e) {
-  this.setExpanded(!this.expanded_);
-  this.parentToolbox_.setSelectedItem(this);
-};
-
-/**
  * Opens or closes the current category if it has children.
  * @param {boolean} isExpanded True to expand the category, false otherwise.
+ * @public
  */
 Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
-  if (!this.hasCategories()) {
+  if (!this.hasChildren()) {
     return;
   }
   this.expanded_ = isExpanded;
@@ -373,74 +439,84 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
     this.subCategoriesDiv_.style.display = 'none';
     this.closeIcon_(this.iconDiv_);
   }
+
+  if (this.hasChildren()) {
+    for (var i = 0; i < this.contents_.length; i++) {
+      var child = this.contents_[i];
+      child.setVisible(isExpanded);
+      child.setParent(this);
+    }
+  }
+
   // TODO: Look into this. We were using Blockly.svgResize(this.workspace_) before.
   // TODO: Look into Blockly.svgResize(this.workspace_) it creates line btwn toolbox and flyout.
   this.parentToolbox_.position();
+  // Blockly.svgResize(this.workspace_);
 };
 
 /**
- * Adds appropriate classes to display an open icon.
- * @param {HTMLDivElement} iconDiv The div that holds the icon.
- * @private
+ * Set whether the toolbox is visible or not.
+ * @param {boolean} isVisible True if toolbox should be visible.
  */
-Blockly.ToolboxCategory.prototype.openIcon_ = function(iconDiv) {
-  // TODO: This breaks if we call addClass before removeClass when we have classes like (fa fa-arrow-down, fa fa-arrow-up)
-  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['closedIcon']);
-  Blockly.utils.dom.addClass(iconDiv, this.classConfig_['openIcon']);
+Blockly.ToolboxCategory.prototype.setVisible = function(isVisible) {
+  this.isVisible_ = isVisible;
+  // TODO: Might actually want to hide the div.
 };
 
 /**
- * Adds appropriate classes to display a closed icon.
- * @param {HTMLDivElement} iconDiv The div that holds the icon.
- * @private
+ * Whether the category is visible.
+ * @return {boolean} True if the category is visible, false otherwise.
  */
-Blockly.ToolboxCategory.prototype.closeIcon_ = function(iconDiv) {
-  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['openIcon']);
-  Blockly.utils.dom.addClass(iconDiv, this.classConfig_['closedIcon']);
+Blockly.ToolboxCategory.prototype.isVisible = function() {
+  return this.isVisible_;
+};
+
+/**
+ * Whether the category is expanded to show the child sub categories.
+ * @return {boolean} True if the category shows it's children, false otherwise.
+ */
+Blockly.ToolboxCategory.prototype.isExpanded = function() {
+  return this.expanded_;
+};
+
+/**
+ * Sets the parent for the category.
+ * @param {Blockly.ToolboxCategory} parent The parent toolbox item.
+ */
+Blockly.ToolboxCategory.prototype.setParent = function(parent) {
+  this.parent = parent;
+};
+
+/**
+ * Gets the parent of the category.
+ * @return {Blockly.ToolboxCategory} THe parent toolbox item.
+ */
+Blockly.ToolboxCategory.prototype.getParent = function() {
+  return this.parent;
 };
 
 /**
  * Gets the name of the category.
  * @return {string} The name of the category.
+ * @public
  */
 Blockly.ToolboxCategory.prototype.getName = function() {
   return this.name_;
 };
 
 /**
- * Handles key down for the category.
- * @param {Event} e Key down event.
- * @protected
+ * Gets a unique identifier for the category.
+ * @return {string} The id of the category.
+ * @public
  */
-Blockly.ToolboxCategory.prototype.onKeyDown_ = function(e) {
-  var handled = true;
-  switch (e.keyCode) {
-    case Blockly.utils.KeyCodes.DOWN:
-      // TODO: Don't love this.
-      handled = this.parentToolbox_.selectNext();
-      break;
-    case Blockly.utils.KeyCodes.UP:
-      handled = this.parentToolbox_.selectPrevious();
-      break;
-    default:
-      handled = false;
-      break;
-  }
-
-  if (handled) {
-    e.preventDefault();
-  }
+Blockly.ToolboxCategory.prototype.getId = function() {
+  return this.id_;
 };
 
 /**
  * Dispose of this category.
+ * @public
  */
 Blockly.ToolboxCategory.prototype.dispose = function() {
-  if (this.clickEvent_) {
-    Blockly.unbindEvent_(this.clickEvent_);
-  }
-  if (this.keyDownEvent_) {
-    Blockly.unbindEvent_(this.keyDownEvent_);
-  }
   Blockly.utils.dom.removeNode(this.htmlDiv_);
 };

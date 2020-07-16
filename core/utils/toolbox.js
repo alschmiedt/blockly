@@ -29,6 +29,7 @@ Blockly.utils.toolbox.Block;
  * The information needed to create a separator in the toolbox.
  * @typedef {{
  *            kind:string,
+ *            id:?string,
  *            gap:?number
  *          }}
  */
@@ -48,6 +49,7 @@ Blockly.utils.toolbox.Button;
  * The information needed to create a label in the toolbox.
  * @typedef {{
  *            kind:string,
+ *            id:?string,
  *            text:string
  *          }}
  */
@@ -58,6 +60,7 @@ Blockly.utils.toolbox.Label;
  * @typedef {{
  *            kind:string,
  *            name:string,
+ *            id:?string,
  *            categorystyle:?string,
  *            colour:?string,
  *            contents:Array.<Blockly.utils.toolbox.Toolbox>
@@ -84,6 +87,14 @@ Blockly.utils.toolbox.Toolbox;
  */
 Blockly.utils.toolbox.ToolboxDefinition;
 
+/**
+ * All the different types that can be displayed in a flyout.
+ * @typedef {Array.<Blockly.utils.toolbox.Block|
+ *                  Blockly.utils.toolbox.Separator|
+ *                  Blockly.utils.toolbox.Button|
+ *                  Blockly.utils.toolbox.Label>}
+ */
+Blockly.utils.toolbox.FlyoutDefinition;
 
 /**
  * Parse the provided toolbox definition into a consistent format.
@@ -145,7 +156,13 @@ Blockly.utils.toolbox.toolboxXmlToJson_ = function(toolboxDef) {
     // Add xml attributes to object
     for (var j = 0; j < child.attributes.length; j++) {
       var attr = child.attributes[j];
-      obj[attr.nodeName] = attr.value;
+      if (attr.nodeName.indexOf('class-') > -1) {
+        var classConfig = obj['classConfig'] || {};
+        classConfig[attr.nodeName.replace('class-', '')] = attr.value;
+        obj['classConfig'] = classConfig;
+      } else {
+        obj[attr.nodeName] = attr.value;
+      }
     }
     arr.push(obj);
   }

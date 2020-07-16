@@ -80,6 +80,7 @@ Blockly.ToolboxSeparator.prototype.createDom = function() {
   } else {
     treeSeparatorContainer.classList.add('blocklyTreeSeparator');
   }
+  this.htmlDiv_ = treeSeparatorContainer;
   return treeSeparatorContainer;
 };
 
@@ -91,6 +92,11 @@ Blockly.ToolboxSeparator.prototype.createDom = function() {
 Blockly.ToolboxSeparator.prototype.getId = function() {
   return this.id_;
 };
+
+Blockly.ToolboxSeparator.prototype.getDiv = function() {
+  return this.htmlDiv_;
+};
+
 
 /**
  * Gets the name of this toolbox item. Used for events.

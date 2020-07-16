@@ -63,6 +63,13 @@ Blockly.NewToolbox = function(workspace) {
   this.contentsDiv_ = null;
 
   /**
+   * The list of items in the toolbox.
+   * @type {Array.<Blockly.IToolboxItem>}
+   * @protected
+   */
+  this.contents_ = [];
+
+  /**
    * The width of the toolbox.
    * @type {number}
    * @protected
@@ -84,13 +91,6 @@ Blockly.NewToolbox = function(workspace) {
   this.RTL = workspace.options.RTL;
 
   /**
-   * The list of items in the toolbox.
-   * @type {Array.<Blockly.IToolboxItem>}
-   * @protected
-   */
-  this.contents_ = [];
-
-  /**
    * The flyout for the toolbox.
    * @type {Blockly.Flyout}
    * @private
@@ -102,7 +102,7 @@ Blockly.NewToolbox = function(workspace) {
    * @type {Object<string, Blockly.IToolboxItem>}
    * @protected
    */
-  this.toolboxItemIds_ = {};
+  this.contentIds_ = {};
 
   /**
    * Position of the toolbox and flyout relative to the workspace.
@@ -126,22 +126,11 @@ Blockly.NewToolbox = function(workspace) {
    * @private
    */
   this.boundEvents_ = [];
-
-  /**
-   * The config for all the toolbox css classes.
-   * TODO: Can't Do this until we change the toolbox to return an object instead of an array.
-   * @type {Object}
-   * @protected
-   */
-  // this.classConfig_ = {
-  //   'container': 'blocklyToolboxDiv',
-  //   'contents': 'blocklyToolboxContents',
-  // };
-  // Blockly.utils.object.mixin(this.classConfig_, this.toolboxDef_['classConfig']);
 };
 
 /**
  * Initializes the toolbox
+ * @package
  */
 Blockly.NewToolbox.prototype.init = function() {
   var workspace = this.workspace_;
@@ -150,12 +139,11 @@ Blockly.NewToolbox.prototype.init = function() {
   this.flyout_ = this.createFlyout_();
 
   this.createDom_(this.workspace_);
-
+  this.render(this.toolboxDef_);
   var themeManager = workspace.getThemeManager();
   themeManager.subscribe(this.HtmlDiv, 'toolboxBackgroundColour',
       'background-color');
   themeManager.subscribe(this.HtmlDiv, 'toolboxForegroundColour', 'color');
-
 
   // Insert the flyout after the workspace.
   Blockly.utils.dom.insertAfter(this.flyout_.createDom('svg'), svg);
@@ -163,7 +151,7 @@ Blockly.NewToolbox.prototype.init = function() {
 };
 
 /**
- * Create the dom for the toolbox.
+ * Creates the dom for the toolbox.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace this toolbox is on.
  * @protected
  */
@@ -174,8 +162,6 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
   this.HtmlDiv.tabIndex = 0;
 
   this.contentsDiv_ = this.createContentsContainer_();
-  this.addContents_(this.toolboxDef_);
-
   this.HtmlDiv.appendChild(this.contentsDiv_);
 
   svg.parentNode.insertBefore(this.HtmlDiv, svg);
@@ -184,9 +170,9 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
 };
 
 /**
- * Create the container div for the toolbox.
+ * Creates the container div for the toolbox.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace that the toolbox is on.
- * @return {!HTMLDivElement} The div that holds the toolbox.
+ * @return {!HTMLDivElement} The html container for the toolbox.
  * @protected
  */
 Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
@@ -198,13 +184,14 @@ Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
 };
 
 /**
- * Create the container for all the contents in the toolbox.
- * @return {!HTMLDivElement} The div that holds the toolbox.
+ * Creates the container for all the contents in the toolbox.
+ * @return {!HTMLDivElement} The html container for the toolbox contents.
  * @protected
  */
 Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
   var contentsContainer = document.createElement('div');
   // TODO: Should I be using addClass?
+  // contentsContainer.classList.add('blocklyToolboxContents');
   Blockly.utils.dom.addClass(contentsContainer, 'blocklyToolboxContents');
   if (this.isHorizontal()) {
     contentsContainer.style.flexDirection = 'row';
@@ -213,7 +200,7 @@ Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
 };
 
 /**
- * Add event listeners to the toolbox HtmlDiv.
+ * Adds event listeners to the toolbox HtmlDiv.
  * @protected
  */
 Blockly.NewToolbox.prototype.addToolboxListeners_ = function() {
@@ -230,7 +217,7 @@ Blockly.NewToolbox.prototype.addToolboxListeners_ = function() {
 };
 
 /**
- * Event listener for when the toolbox is clicked.
+ * Handles on click events for when the toolbox or toolbox items are clicked.
  * @param {Event} e Click event to handle.
  * @protected
  */
@@ -257,7 +244,7 @@ Blockly.NewToolbox.prototype.onClick_ = function(e) {
 /**
  * Handles key down events for the toolbox.
  * @param {KeyboardEvent} e The key down event.
- * @private
+ * @protected
  */
 Blockly.NewToolbox.prototype.onKeyDown_ = function(e) {
   var handled = false;
@@ -351,18 +338,23 @@ Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
 };
 
 /**
- * Updates the
- * @param toolboxDef
+ * Updates all the contents of the toolbox.
+ * @param {Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef Array holding
+ *     objects containing information on the contents of the toolbox.
+ * @package
  */
 Blockly.NewToolbox.prototype.render = function(toolboxDef) {
   this.toolboxDef_ = toolboxDef;
-  // TODO: THis whole thing is suspect. Check if there is a better way to swap out contents.
-  if (this.contentsDiv_) {
-    Blockly.utils.dom.removeNode(this.contentsDiv_);
+  // TODO: Future improvement to compare the new toolboxDef with the old and
+  //  only re render what has changed.
+  for (var i = 0; i < this.contents_.length; i++) {
+    var child = this.contents_[i];
+    // TODO: getDiv() on IToolboxItem
+    child.getDiv().remove();
   }
-  this.contentsDiv_ = this.createContentsContainer_();
+  this.contents_ = [];
+  this.contentIds_ = {};
   this.addContents_(toolboxDef);
-  this.HtmlDiv.appendChild(this.contentsDiv_);
   this.position();
 };
 
@@ -373,12 +365,12 @@ Blockly.NewToolbox.prototype.render = function(toolboxDef) {
  */
 Blockly.NewToolbox.prototype.insertToolboxItem = function(toolboxItem) {
   this.contents_.push(toolboxItem);
-  this.toolboxItemIds_[toolboxItem.getId()] = toolboxItem;
+  this.contentIds_[toolboxItem.getId()] = toolboxItem;
   if (toolboxItem.hasChildren()) {
     for (var i = 0; i < toolboxItem.contents_.length; i++) {
       var child = toolboxItem.contents_[i];
       this.contents_.push(child);
-      this.toolboxItemIds_[child.getId()] = child;
+      this.contentIds_[child.getId()] = child;
     }
   }
   this.contentsDiv_.appendChild(toolboxItem.createDom());
@@ -424,7 +416,7 @@ Blockly.NewToolbox.prototype.getClientRect = function() {
  *     no item exists.
  */
 Blockly.NewToolbox.prototype.getToolboxItemById = function(id) {
-  return this.toolboxItemIds_[id];
+  return this.contentIds_[id];
 };
 
 /**
@@ -558,7 +550,6 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
     oldItem.setSelected(false);
   }
 
-
   if (newItem && newItem != oldItem ) {
     this.selectedItem_ = newItem;
     newItem.setSelected(true);
@@ -569,7 +560,7 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
 };
 
 /**
- * Select the first toolbox category if no category is selected.
+ * Selects the category by the position.
  * @param {number} position The position of the item to select.
  * @public
  */
@@ -580,7 +571,7 @@ Blockly.NewToolbox.prototype.selectItemByPosition = function(position) {
 };
 
 /**
- * Update the flyout.
+ * Updates the flyout.
  * @param {Blockly.IToolboxItem} oldItem The previously selected toolbox item.
  * @param {Blockly.IToolboxItem} newItem The currently selected toolbox item.
  * @private
@@ -654,8 +645,8 @@ Blockly.NewToolbox.prototype.selectParent = function() {
   if (this.selectedItem_.hasChildren()) {
     this.selectedItem_.setExpanded(false);
     return true;
-  } else if (this.selectedItem_.getParent()) {
-    this.setSelectedItem(this.selectedItem_.getParent());
+  } else if (this.selectedItem_.parent) {
+    this.setSelectedItem(this.selectedItem_.parent);
     return true;
   }
   return false;
@@ -789,7 +780,7 @@ Blockly.Css.register([
 
   '.blocklyToolboxCategory {',
     'padding-bottom: 3px',
-  '};',
+  '}',
 
   '.blocklyToolboxContents {',
     'display: flex;',

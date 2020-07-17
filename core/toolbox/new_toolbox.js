@@ -159,9 +159,11 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
   var svg = workspace.getParentSvg();
 
   this.HtmlDiv = this.createContainer_(workspace);
-  this.HtmlDiv.tabIndex = 0;
 
   this.contentsDiv_ = this.createContentsContainer_();
+  this.contentsDiv_.tabIndex = 0;
+  Blockly.utils.aria.setRole(this.contentsDiv_, Blockly.utils.aria.Role.TREE);
+
   this.HtmlDiv.appendChild(this.contentsDiv_);
 
   svg.parentNode.insertBefore(this.HtmlDiv, svg);
@@ -210,7 +212,7 @@ Blockly.NewToolbox.prototype.addToolboxListeners_ = function() {
       /* opt_noPreventDefault */ true);
   this.boundEvents_.push(clickEvent);
 
-  var keyDownEvent = Blockly.bindEventWithChecks_(this.HtmlDiv, 'keydown',
+  var keyDownEvent = Blockly.bindEventWithChecks_(this.contentsDiv_, 'keydown',
       this, this.onKeyDown_, /* opt_noCaptureIdentifier */ false,
       /* opt_noPreventDefault */ true);
   this.boundEvents_.push(keyDownEvent);
@@ -260,6 +262,14 @@ Blockly.NewToolbox.prototype.onKeyDown_ = function(e) {
       break;
     case Blockly.utils.KeyCodes.RIGHT:
       handled = this.selectChild();
+      break;
+    case Blockly.utils.KeyCodes.ENTER:
+    case Blockly.utils.KeyCodes.SPACE:
+      // TODO: We can have a selected ISelectableToolboxItem IToolboxItem.
+      if (this.selectedItem_ && this.selectedItem_.toggleExpanded) {
+        this.selectedItem_.toggleExpanded();
+        handled = true;
+      }
       break;
     default:
       handled = false;
@@ -519,6 +529,7 @@ Blockly.NewToolbox.prototype.refreshTheme = function() {
  * procedures.
  */
 Blockly.NewToolbox.prototype.refreshSelection = function() {
+  // TODO: Need to use .contents_
   if (this.selectedItem_ && !this.selectedItem_.hasChildren() &&
       this.selectedItem_.contents_) {
     this.flyout_.show(this.selectedItem_.contents_);
@@ -553,6 +564,7 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   if (newItem && newItem != oldItem ) {
     this.selectedItem_ = newItem;
     newItem.setSelected(true);
+    newItem.getDiv().focus();
   }
 
   this.updateFlyout_(oldItem, newItem);

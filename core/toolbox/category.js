@@ -215,6 +215,10 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
 
   this.rowDiv_ = document.createElement('div');
   Blockly.utils.dom.addClass(this.rowDiv_, this.classConfig_['row']);
+  Blockly.utils.aria.setRole(this.htmlDiv_, Blockly.utils.aria.Role.TREEITEM);
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.SELECTED, false);
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.EXPANDED, false);
+  this.htmlDiv_.tabIndex = -1;
   this.htmlDiv_.appendChild(this.rowDiv_);
 
   if (this.parentToolbox_.isHorizontal()) {
@@ -222,10 +226,13 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
   }
 
   this.iconDiv_ = this.createIconSpan_();
+  Blockly.utils.aria.setRole(this.iconDiv_, Blockly.utils.aria.Role.PRESENTATION);
   this.rowDiv_.appendChild(this.iconDiv_);
 
   var toolboxLabel = this.createLabelSpan_();
   this.rowDiv_.appendChild(toolboxLabel);
+  // TODO: How can I try to make sure they have created a label with an id?
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.LABELLEDBY, toolboxLabel.getAttribute('id'));
 
   if (this.hasChildren()) {
     this.subcategoriesDiv_ = this.createSubCategories_(this.contents_);
@@ -301,6 +308,7 @@ Blockly.ToolboxCategory.prototype.createIconSpan_ = function() {
  */
 Blockly.ToolboxCategory.prototype.createLabelSpan_ = function() {
   var toolboxLabel = document.createElement('span');
+  toolboxLabel.setAttribute('id', this.getId() + '.label');
   toolboxLabel.textContent = this.name_;
   Blockly.utils.dom.addClass(toolboxLabel, this.classConfig_['label']);
   return toolboxLabel;
@@ -393,7 +401,7 @@ Blockly.ToolboxCategory.prototype.hasChildren = function() {
  * @public
  */
 Blockly.ToolboxCategory.prototype.onClick = function(e) {
-  this.setExpanded(!this.expanded_);
+  this.toggleExpanded();
 };
 
 /**
@@ -439,6 +447,7 @@ Blockly.ToolboxCategory.prototype.setSelected = function(isSelected) {
     this.rowDiv_.style.backgroundColor = '';
     Blockly.utils.dom.removeClass(this.rowDiv_, this.classConfig_['selected']);
   }
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.SELECTED, isSelected);
 };
 
 /**
@@ -458,6 +467,7 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
     this.subcategoriesDiv_.style.display = 'none';
     this.closeIcon_(this.iconDiv_);
   }
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.EXPANDED, isExpanded);
 
   if (this.hasChildren()) {
     for (var i = 0; i < this.contents_.length; i++) {
@@ -468,6 +478,13 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
   }
 
   Blockly.svgResize(this.workspace_);
+};
+
+/**
+ * Toggle if this category is expanded.
+ */
+Blockly.ToolboxCategory.prototype.toggleExpanded = function() {
+  this.setExpanded(!this.expanded_);
 };
 
 /**

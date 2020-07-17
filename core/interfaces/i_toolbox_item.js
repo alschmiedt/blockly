@@ -28,6 +28,25 @@ Blockly.IToolboxItem = function() {};
 Blockly.IToolboxItem.prototype.createDom;
 
 /**
+ * True if the item has children, false otherwise.
+ * Currently used for categories.
+ * @return {boolean}
+ */
+Blockly.IToolboxItem.prototype.hasChildren;
+
+/**
+ * The name of the toolbox item.
+ * Used for events.
+ */
+Blockly.IToolboxItem.prototype.getName;
+
+/**
+ * Returns a unique identifier for the toolbox item.
+ * @return {string}
+ */
+Blockly.IToolboxItem.prototype.getId;
+
+/**
  * Create the dom for the toolbox item.
  * @return {void}
  */

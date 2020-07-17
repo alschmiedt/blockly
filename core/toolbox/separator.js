@@ -13,6 +13,11 @@
 
 goog.provide('Blockly.ToolboxSeparator');
 
+goog.require('Blockly.ToolboxItem');
+
+goog.requireType('Blockly.IToolboxItem');
+
+
 /**
  * Class for a toolbox separator.
  * @param {!Blockly.utils.toolbox.Separator} toolboxSeparatorDef The information
@@ -20,36 +25,12 @@ goog.provide('Blockly.ToolboxSeparator');
  * @param {!Blockly.IToolbox} toolbox The parent toolbox for the category.
  * @constructor
  * @implements {Blockly.IToolboxItem}
+ * @extends {Blockly.ToolboxItem}
  */
 Blockly.ToolboxSeparator = function(toolboxSeparatorDef, toolbox) {
 
-  /**
-   * The type.
-   * @type {string}
-   */
-  this.type = toolboxSeparatorDef['kind'].toUpperCase();
-
-  /**
-   * The toolbox this category belongs to.
-   * @type {!Blockly.IToolbox}
-   * @protected
-   */
-  this.parentToolbox_ = toolbox;
-
-  /**
-   * The workspace of the parent toolbox.
-   * @type {!Blockly.WorkspaceSvg}
-   * @protected
-   */
-  this.workspace_ = this.parentToolbox_.getWorkspace();
-
-  /**
-   * The id for the separator.
-   * @type {string}
-   * @private
-   */
-  this.id_ = Blockly.utils.genUid();
-
+  Blockly.ToolboxSeparator.superClass_.constructor.call(
+      this, toolboxSeparatorDef, toolbox);
   /**
    * The config for all the separator classes.
    * @type {Object}
@@ -60,8 +41,8 @@ Blockly.ToolboxSeparator = function(toolboxSeparatorDef, toolbox) {
   };
 
   Blockly.utils.object.mixin(this.classConfig_, toolboxSeparatorDef['classConfig']);
-
 };
+Blockly.utils.object.inherits(Blockly.ToolboxSeparator, Blockly.ToolboxItem);
 
 /**
  * Create the dom for a toolbox separator.
@@ -84,48 +65,8 @@ Blockly.ToolboxSeparator.prototype.createDom = function() {
   return treeSeparatorContainer;
 };
 
-/**
- * Gets a unique identifier for the separator.
- * @return {string} The id of the separator.
- * @public
- */
-Blockly.ToolboxSeparator.prototype.getId = function() {
-  return this.id_;
-};
-
 Blockly.ToolboxSeparator.prototype.getDiv = function() {
   return this.htmlDiv_;
-};
-
-
-/**
- * Gets the name of this toolbox item. Used for events.
- * @return {string} The name of this toolbox item.
- */
-Blockly.ToolboxSeparator.prototype.getName = function() {
-  return 'separator';
-};
-
-
-Blockly.ToolboxSeparator.prototype.hasChildren = function() {
-  return false;
-};
-
-/**
- * Whether this separator is visible.
- * TODO: This feels weird. Maybe should be selectable?
- * @return {boolean} True if the category is visible, false otherwise.
- */
-Blockly.ToolboxSeparator.prototype.isVisible = function() {
-  return false;
-};
-
-
-/**
- * ???
- */
-Blockly.ToolboxSeparator.prototype.setSelected = function() {
-  // TODO: Figure out what to do here.
 };
 
 /**

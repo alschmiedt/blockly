@@ -13,15 +13,25 @@
 
 goog.provide('Blockly.ToolboxCategory');
 
+goog.require('Blockly.CollapsibleToolboxItem');
+goog.require('Blockly.utils.aria');
+goog.require('Blockly.utils.object');
+
+goog.requireType('Blockly.IToolboxItem');
+
+
 /**
  * Class for a category in a toolbox.
  * @param {!Blockly.utils.toolbox.Category} categoryDef The information needed
  *     to create a category in the toolbox.
  * @param {!Blockly.IToolbox} toolbox The parent toolbox for the category.
  * @constructor
- * @implements {Blockly.IToolboxItem}
+ * @extends {Blockly.CollapsibleToolboxItem}
+ * @implements {Blockly.ICollapsibleToolboxItem}
  */
 Blockly.ToolboxCategory = function(categoryDef, toolbox) {
+  Blockly.ToolboxCategory.superClass_.constructor.call(
+      this, categoryDef, toolbox);
 
   /**
    * The name that will be displayed on the category.
@@ -29,35 +39,6 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
    * @protected
    */
   this.name_ = categoryDef['name'];
-
-  /**
-   * The id for the category.
-   * TODO: Is this a problem for xml?
-   * @type {string}
-   * @private
-   */
-  this.id_ = categoryDef["id"] || Blockly.utils.genUid();
-
-  /**
-   * The toolbox this category belongs to.
-   * @type {!Blockly.IToolbox}
-   * @protected
-   */
-  this.parentToolbox_ = toolbox;
-
-  /**
-   * The workspace of the parent toolbox.
-   * @type {!Blockly.WorkspaceSvg}
-   * @protected
-   */
-  this.workspace_ = this.parentToolbox_.getWorkspace();
-
-  /**
-   * The definition used to create the category.
-   * @type {!Blockly.utils.toolbox.Category}
-   * @protected
-   */
-  this.categoryDef_ = categoryDef;
 
   var contents = categoryDef['contents'];
 
@@ -156,8 +137,9 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
    * @type {Blockly.ToolboxCategory}
    */
   this.parent = null;
-
 };
+
+Blockly.utils.object.inherits(Blockly.ToolboxCategory, Blockly.CollapsibleToolboxItem);
 
 /**
  * @typedef {{
@@ -204,9 +186,7 @@ Blockly.ToolboxCategory.prototype.parseContents_ = function(categoryDef, hasChil
 };
 
 /**
- * Creates the dom for a toolbox category.
- * @return {HTMLDivElement} The div for the category.
- * @public
+ * @override
  */
 Blockly.ToolboxCategory.prototype.createDom = function() {
   this.htmlDiv_ = document.createElement('div');
@@ -396,9 +376,7 @@ Blockly.ToolboxCategory.prototype.hasChildren = function() {
 };
 
 /**
- * Event listener for when the category is clicked.
- * @param {Event} e Click event to handle.
- * @public
+ * @override
  */
 Blockly.ToolboxCategory.prototype.onClick = function(e) {
   this.toggleExpanded();
@@ -430,14 +408,12 @@ Blockly.ToolboxCategory.prototype.closeIcon_ = function(iconDiv) {
  * @public
  */
 Blockly.ToolboxCategory.prototype.refreshTheme = function() {
-  this.colour_ = this.getColour_(this.categoryDef_);
+  this.colour_ = this.getColour_(this.toolboxItemDef_);
   this.addColour_(this.colour_);
 };
 
 /**
- * Set the current category as selected.
- * @param {boolean} isSelected True if this category is selected, false otherwise.
- * @public
+ * @override
  */
 Blockly.ToolboxCategory.prototype.setSelected = function(isSelected) {
   if (isSelected) {
@@ -509,37 +485,36 @@ Blockly.ToolboxCategory.prototype.isVisible = function() {
 };
 
 /**
- * Whether the category is expanded to show it's child subcategories.
- * @return {boolean} True if the category shows it's children, false if it is
- *     collapsed.
- * @public
+ * @override
  */
 Blockly.ToolboxCategory.prototype.isExpanded = function() {
   return this.expanded_;
 };
 
 /**
- * Gets the name of the category.
- * @return {string} The name of the category.
- * @public
+ * @override
+ */
+Blockly.ToolboxCategory.prototype.isSelectable = function() {
+  // TODO: Add && isSelectable_
+  return this.isVisible();
+};
+
+/**
+ * @override
+ */
+Blockly.ToolboxCategory.prototype.isCollapsible = function() {
+  return this.hasChildren();
+};
+
+/**
+ * @override
  */
 Blockly.ToolboxCategory.prototype.getName = function() {
   return this.name_;
 };
 
 /**
- * Gets a unique identifier for the category.
- * @return {string} The id of the category.
- * @public
- */
-Blockly.ToolboxCategory.prototype.getId = function() {
-  return this.id_;
-};
-
-/**
- * Gets the div for the category.
- * @return {HTMLDivElement} The div for the category.
- * @public
+ * @override
  */
 Blockly.ToolboxCategory.prototype.getDiv = function() {
   return this.htmlDiv_;
@@ -547,8 +522,7 @@ Blockly.ToolboxCategory.prototype.getDiv = function() {
 
 
 /**
- * Dispose of this category.
- * @public
+ * @override
  */
 Blockly.ToolboxCategory.prototype.dispose = function() {
   Blockly.utils.dom.removeNode(this.htmlDiv_);

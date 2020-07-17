@@ -16,6 +16,8 @@ goog.require('Blockly.ToolboxCategory');
 goog.require('Blockly.ToolboxSeparator');
 
 /**
+ * TODO: category -> toolbox item
+ * TODO: Decide whether we want to use IToolboxItem or toolboxItem && Same with selectable
  * Class for a Toolbox.
  * Creates the toolbox's DOM.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace in which to create new
@@ -64,7 +66,7 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The list of items in the toolbox.
-   * @type {Array.<Blockly.IToolboxItem>}
+   * @type {Array.<Blockly.ToolboxItem>}
    * @protected
    */
   this.contents_ = [];
@@ -99,7 +101,7 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The id of the toolbox item as the key and the toolbox item as the value.
-   * @type {Object<string, Blockly.IToolboxItem>}
+   * @type {Object<string, Blockly.ToolboxItem>}
    * @protected
    */
   this.contentIds_ = {};
@@ -113,7 +115,7 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The currently selected item.
-   * @type {Blockly.IToolboxItem}
+   * @type {Blockly.ToolboxItem}
    * @protected
    */
   this.selectedItem_ = null;
@@ -232,8 +234,8 @@ Blockly.NewToolbox.prototype.onClick_ = function(e) {
     var itemId = srcElement.getAttribute('data-id');
     if (itemId) {
       var item = this.getToolboxItemById(itemId);
-      this.setSelectedItem(item);
-      if (item.onClick) {
+      if (item.isSelectable()) {
+        this.setSelectedItem(item);
         item.onClick();
       }
     }
@@ -265,8 +267,7 @@ Blockly.NewToolbox.prototype.onKeyDown_ = function(e) {
       break;
     case Blockly.utils.KeyCodes.ENTER:
     case Blockly.utils.KeyCodes.SPACE:
-      // TODO: We can have a selected ISelectableToolboxItem IToolboxItem.
-      if (this.selectedItem_ && this.selectedItem_.toggleExpanded) {
+      if (this.selectedItem_ && this.selectedItem_.isCollapsible()) {
         this.selectedItem_.toggleExpanded();
         handled = true;
       }
@@ -371,12 +372,12 @@ Blockly.NewToolbox.prototype.render = function(toolboxDef) {
 /**
  * Add an item to the end of the toolbox.
  * TODO: Add ability to insert at a position
- * @param {!Blockly.IToolboxItem} toolboxItem The item in the toolbox.
+ * @param {!Blockly.ToolboxItem} toolboxItem The item in the toolbox.
  */
 Blockly.NewToolbox.prototype.insertToolboxItem = function(toolboxItem) {
   this.contents_.push(toolboxItem);
   this.contentIds_[toolboxItem.getId()] = toolboxItem;
-  if (toolboxItem.hasChildren()) {
+  if (toolboxItem.isCollapsible()) {
     for (var i = 0; i < toolboxItem.contents_.length; i++) {
       var child = toolboxItem.contents_[i];
       this.contents_.push(child);
@@ -422,7 +423,7 @@ Blockly.NewToolbox.prototype.getClientRect = function() {
 /**
  * Gets the toolbox item with the given id.
  * @param {string} id The id of the toolbox item.
- * @return {Blockly.IToolboxItem} The toolbox item with the given id, or null if
+ * @return {Blockly.ToolboxItem} The toolbox item with the given id, or null if
  *     no item exists.
  */
 Blockly.NewToolbox.prototype.getToolboxItemById = function(id) {
@@ -530,7 +531,7 @@ Blockly.NewToolbox.prototype.refreshTheme = function() {
  */
 Blockly.NewToolbox.prototype.refreshSelection = function() {
   // TODO: Need to use .contents_
-  if (this.selectedItem_ && !this.selectedItem_.hasChildren() &&
+  if (this.selectedItem_ && !this.selectedItem_.isCollapsible() &&
       this.selectedItem_.contents_) {
     this.flyout_.show(this.selectedItem_.contents_);
   }
@@ -546,17 +547,17 @@ Blockly.NewToolbox.prototype.setVisible = function(isVisible) {
 
 /**
  * Set the given item as selected.
- * @param {Blockly.IToolboxItem} newItem The toolbox item to select.
+ * @param {Blockly.SelectableToolboxItem} newItem The toolbox item to select.
  */
 Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   var oldItem = this.selectedItem_;
 
-  if (!newItem && !oldItem) {
+  if ((!newItem && !oldItem)) {
     return;
   }
-
-  // Do not deselct if the oldItem has children and has been previously clicked on.
-  if (oldItem && (!oldItem.hasChildren() || oldItem != newItem)) {
+  newItem = /** @type {Blockly.SelectableToolboxItem} */ (newItem);
+  // Do not deselect if the oldItem has children and has been previously clicked on.
+  if (oldItem && (!oldItem.isCollapsible() || oldItem != newItem)) {
     this.selectedItem_ = null;
     oldItem.setSelected(false);
   }
@@ -564,7 +565,9 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   if (newItem && newItem != oldItem ) {
     this.selectedItem_ = newItem;
     newItem.setSelected(true);
-    newItem.getDiv().focus();
+    if (newItem.getDiv()) {
+      newItem.getDiv().focus();
+    }
   }
 
   this.updateFlyout_(oldItem, newItem);
@@ -572,25 +575,28 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
 };
 
 /**
- * Selects the category by the position.
+ * Selects the toolbox item by the position.
  * @param {number} position The position of the item to select.
  * @public
  */
 Blockly.NewToolbox.prototype.selectItemByPosition = function(position) {
   if (position > -1 && position < this.contents_.length) {
-    this.setSelectedItem(this.contents_[position]);
+    var item = this.contents_[position];
+    if (item.isSelectable()) {
+      this.setSelectedItem(item);
+    }
   }
 };
 
 /**
  * Updates the flyout.
- * @param {Blockly.IToolboxItem} oldItem The previously selected toolbox item.
- * @param {Blockly.IToolboxItem} newItem The currently selected toolbox item.
+ * @param {Blockly.ToolboxItem} oldItem The previously selected toolbox item.
+ * @param {Blockly.ToolboxItem} newItem The currently selected toolbox item.
  * @private
  */
 Blockly.NewToolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
   if (oldItem == newItem || !newItem || !newItem.contents_ ||
-      newItem.hasChildren()) {
+      newItem.isCollapsible()) {
     this.flyout_.hide();
   } else if (newItem.contents_) {
     this.flyout_.show(newItem.contents_);
@@ -600,8 +606,8 @@ Blockly.NewToolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
 
 /**
  * Emits an event when a new toolbox item is selected.
- * @param {Blockly.IToolboxItem} oldItem The previously selected toolbox item.
- * @param {Blockly.IToolboxItem} newItem The currently selected toolbox item.
+ * @param {Blockly.SelectableToolboxItem} oldItem The previously selected toolbox item.
+ * @param {Blockly.SelectableToolboxItem} newItem The currently selected toolbox item.
  * @private
  */
 Blockly.NewToolbox.prototype.fireEvent_ = function(oldItem, newItem) {
@@ -654,10 +660,10 @@ Blockly.NewToolbox.prototype.selectParent = function() {
     return false;
   }
 
-  if (this.selectedItem_.hasChildren()) {
+  if (this.selectedItem_.isCollapsible()) {
     this.selectedItem_.setExpanded(false);
     return true;
-  } else if (this.selectedItem_.parent) {
+  } else if (this.selectedItem_.parent && this.selectedItem_.isSelectable()) {
     this.setSelectedItem(this.selectedItem_.parent);
     return true;
   }
@@ -670,14 +676,15 @@ Blockly.NewToolbox.prototype.selectParent = function() {
  * @public
  */
 Blockly.NewToolbox.prototype.selectChild = function() {
-  if (!this.selectedItem_) {
+  if (!this.selectedItem_ && !this.selectedItem_.isCollapsible()) {
     return false;
   }
-
-  if (this.selectedItem_.hasChildren() && !this.selectedItem_.isExpanded()) {
-    this.selectedItem_.setExpanded(true);
+  var collapsibleItem = /** @type {Blockly.CollapsibleToolboxItem} */
+      (this.selectedItem_);
+  if (!collapsibleItem.isExpanded()) {
+    collapsibleItem.setExpanded(true);
     return true;
-  } else if (this.selectedItem_.hasChildren()) {
+  } else {
     this.selectNext();
     return true;
   }
@@ -697,10 +704,10 @@ Blockly.NewToolbox.prototype.selectNext = function() {
   var nextItemIdx = this.contents_.indexOf(this.selectedItem_) + 1;
   if (nextItemIdx > -1 && nextItemIdx < this.contents_.length) {
     var nextItem = this.contents_[nextItemIdx];
-    while (nextItem && !nextItem.isVisible()) {
+    while (nextItem && !nextItem.isSelectable()) {
       nextItem = this.contents_[++nextItemIdx];
     }
-    if (nextItem && nextItem.isVisible()) {
+    if (nextItem && nextItem.isSelectable()) {
       this.setSelectedItem(nextItem);
       return true;
     }
@@ -721,11 +728,11 @@ Blockly.NewToolbox.prototype.selectPrevious = function() {
   var prevItemIdx = this.contents_.indexOf(this.selectedItem_) - 1;
   if (prevItemIdx > -1 && prevItemIdx < this.contents_.length) {
     var prevItem = this.contents_[prevItemIdx];
-    while (prevItem && !prevItem.isVisible()) {
+    while (prevItem && !prevItem.isSelectable()) {
       prevItem = this.contents_[--prevItemIdx];
     }
-    if (prevItem && prevItem.isVisible()) {
-      this.setSelectedItem(this.contents_[prevItemIdx]);
+    if (prevItem && prevItem.isSelectable()) {
+      this.setSelectedItem(prevItem);
       return true;
     }
   }
@@ -734,7 +741,7 @@ Blockly.NewToolbox.prototype.selectPrevious = function() {
 
 /**
  * Gets the selected item.
- * @return {Blockly.IToolboxItem} The selected item, or null if no item is
+ * @return {Blockly.ToolboxItem} The selected item, or null if no item is
  *     currently selected.
  */
 Blockly.NewToolbox.prototype.getSelected = function() {

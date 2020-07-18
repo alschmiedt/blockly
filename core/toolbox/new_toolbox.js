@@ -676,7 +676,7 @@ Blockly.NewToolbox.prototype.selectParent = function() {
  * @public
  */
 Blockly.NewToolbox.prototype.selectChild = function() {
-  if (!this.selectedItem_ && !this.selectedItem_.isCollapsible()) {
+  if (!this.selectedItem_ || !this.selectedItem_.isCollapsible()) {
     return false;
   }
   var collapsibleItem = /** @type {Blockly.CollapsibleToolboxItem} */

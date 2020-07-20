@@ -25,11 +25,13 @@ goog.requireType('Blockly.IToolboxItem');
  * @param {!Blockly.utils.toolbox.Category} categoryDef The information needed
  *     to create a category in the toolbox.
  * @param {!Blockly.IToolbox} toolbox The parent toolbox for the category.
+ * @param {Blockly.ToolboxCategory=} opt_parent The parent category or null if
+ *     the category does not have a parent.
  * @constructor
  * @extends {Blockly.CollapsibleToolboxItem}
  * @implements {Blockly.ICollapsibleToolboxItem}
  */
-Blockly.ToolboxCategory = function(categoryDef, toolbox) {
+Blockly.ToolboxCategory = function(categoryDef, toolbox, opt_parent) {
   Blockly.ToolboxCategory.superClass_.constructor.call(
       this, categoryDef, toolbox);
 
@@ -50,13 +52,19 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
   this.hasChildren_ = contents && contents.length &&
     typeof contents != 'string' &&
     contents[0].kind.toUpperCase() == 'CATEGORY';
-
   /**
-   * Parse the contents for this category.
-   * @type {string|Array<!Blockly.IToolboxItem>|Blockly.utils.toolbox.FlyoutDefinition}
+   * The parent of the category.
+   * @type {Blockly.ToolboxCategory}
    * @protected
    */
-  this.contents_ = this.parseContents_(categoryDef, this.hasChildren_);
+  this.parent_ = opt_parent;
+
+  /**
+   * The level that the category is nested at.
+   * @type {number}
+   * @protected
+   */
+  this.level_ = this.parent_ ? this.parent_.getLevel() + 1 : 1;
 
   /**
    * The colour of the category.
@@ -133,10 +141,13 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox) {
   this.isVisible_ = true;
 
   /**
-   * The parent of the category.
-   * @type {Blockly.ToolboxCategory}
+   * Parse the contents for this category.
+   * @type {string|
+   *        Array<!Blockly.IToolboxItem>|
+   *        Blockly.utils.toolbox.FlyoutDefinition}
+   * @protected
    */
-  this.parent = null;
+  this.contents_ = this.parseContents_(categoryDef, this.hasChildren_);
 };
 
 Blockly.utils.object.inherits(Blockly.ToolboxCategory, Blockly.CollapsibleToolboxItem);
@@ -172,8 +183,7 @@ Blockly.ToolboxCategory.prototype.parseContents_ = function(categoryDef, hasChil
   var contents = categoryDef['contents'];
   if (hasChildren) {
     for (var i = 0; i < contents.length; i++) {
-      var child = new Blockly.ToolboxCategory(contents[i], this.parentToolbox_);
-      child.parent = this;
+      var child = new Blockly.ToolboxCategory(contents[i], this.parentToolbox_, this);
       toolboxItems.push(child);
     }
   } else if (categoryDef['custom']) {
@@ -191,14 +201,15 @@ Blockly.ToolboxCategory.prototype.parseContents_ = function(categoryDef, hasChil
 Blockly.ToolboxCategory.prototype.createDom = function() {
   this.htmlDiv_ = document.createElement('div');
   Blockly.utils.dom.addClass(this.htmlDiv_, this.classConfig_['container']);
-  this.htmlDiv_.setAttribute('data-id', this.id_);
+  this.htmlDiv_.setAttribute('id', this.id_);
 
   this.rowDiv_ = document.createElement('div');
   Blockly.utils.dom.addClass(this.rowDiv_, this.classConfig_['row']);
   Blockly.utils.aria.setRole(this.htmlDiv_, Blockly.utils.aria.Role.TREEITEM);
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.SELECTED, false);
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.EXPANDED, false);
-  this.htmlDiv_.tabIndex = -1;
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.SELECTED,
+      false);
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.LEVEL,
+      this.level_);
   this.htmlDiv_.appendChild(this.rowDiv_);
 
   if (this.parentToolbox_.isHorizontal()) {
@@ -212,10 +223,13 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
   var toolboxLabel = this.createLabelSpan_();
   this.rowDiv_.appendChild(toolboxLabel);
   // TODO: How can I try to make sure they have created a label with an id?
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.LABELLEDBY, toolboxLabel.getAttribute('id'));
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.LABELLEDBY,
+      toolboxLabel.getAttribute('id'));
 
   if (this.hasChildren()) {
     this.subcategoriesDiv_ = this.createSubCategories_(this.contents_);
+    Blockly.utils.aria.setRole(this.subcategoriesDiv_,
+        Blockly.utils.aria.Role.GROUP);
     this.htmlDiv_.appendChild(this.subcategoriesDiv_);
   }
   this.rowDiv_.style.pointerEvents = 'none';
@@ -245,7 +259,7 @@ Blockly.ToolboxCategory.prototype.addColour_ = function(colour) {
 
 /**
  * Create the dom for all subcategories.
- * @param {Blockly.utils.toolbox.Toolbox} contents The category contents.
+ * @param {Array<Blockly.utils.toolbox.Toolbox>} contents The category contents.
  * @return {HTMLDivElement} The div holding all the subcategories.
  * @protected
  */
@@ -256,7 +270,7 @@ Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
       contentsContainer.style.paddingLeft = '19px';
 
   for (var i = 0; i < contents.length; i++) {
-    var newCategory = this.contents_[i];
+    var newCategory = contents[i];
     var dom = newCategory.createDom();
     contentsContainer.appendChild(dom);
   }
@@ -443,13 +457,13 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
     this.subcategoriesDiv_.style.display = 'none';
     this.closeIcon_(this.iconDiv_);
   }
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.EXPANDED, isExpanded);
+  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.EXPANDED,
+      isExpanded);
 
   if (this.hasChildren()) {
     for (var i = 0; i < this.contents_.length; i++) {
       var child = this.contents_[i];
       child.setVisible(isExpanded);
-      child.parent = this;
     }
   }
 
@@ -511,6 +525,23 @@ Blockly.ToolboxCategory.prototype.isCollapsible = function() {
  */
 Blockly.ToolboxCategory.prototype.getName = function() {
   return this.name_;
+};
+
+/**
+ * Gets the parent of the toolbox category.
+ * TODO: This should go in the collapsible class.
+ * @return {Blockly.ToolboxCategory} The parent of this category.
+ */
+Blockly.ToolboxCategory.prototype.getParent = function() {
+  return this.parent_;
+};
+
+/**
+ * Gets the nested level of the category
+ * @return {number} The nested level of the category.
+ */
+Blockly.ToolboxCategory.prototype.getLevel = function() {
+  return this.level_;
 };
 
 /**

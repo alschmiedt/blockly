@@ -18,6 +18,7 @@ goog.require('Blockly.ToolboxSeparator');
 /**
  * TODO: category -> toolbox item
  * TODO: Decide whether we want to use IToolboxItem or toolboxItem && Same with selectable
+ * TODO: Go through TODOs
  * Class for a Toolbox.
  * Creates the toolbox's DOM.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace in which to create new
@@ -165,7 +166,6 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
   this.contentsDiv_ = this.createContentsContainer_();
   this.contentsDiv_.tabIndex = 0;
   Blockly.utils.aria.setRole(this.contentsDiv_, Blockly.utils.aria.Role.TREE);
-
   this.HtmlDiv.appendChild(this.contentsDiv_);
 
   svg.parentNode.insertBefore(this.HtmlDiv, svg);
@@ -195,7 +195,6 @@ Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
 Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
   var contentsContainer = document.createElement('div');
   // TODO: Should I be using addClass?
-  // contentsContainer.classList.add('blocklyToolboxContents');
   Blockly.utils.dom.addClass(contentsContainer, 'blocklyToolboxContents');
   if (this.isHorizontal()) {
     contentsContainer.style.flexDirection = 'row';
@@ -231,7 +230,7 @@ Blockly.NewToolbox.prototype.onClick_ = function(e) {
     Blockly.hideChaff(false);
   } else {
     var srcElement = e.srcElement;
-    var itemId = srcElement.getAttribute('data-id');
+    var itemId = srcElement.getAttribute('id');
     if (itemId) {
       var item = this.getToolboxItemById(itemId);
       if (item.isSelectable()) {
@@ -560,14 +559,15 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   if (oldItem && (!oldItem.isCollapsible() || oldItem != newItem)) {
     this.selectedItem_ = null;
     oldItem.setSelected(false);
+    Blockly.utils.aria.setState(this.contentsDiv_,
+        Blockly.utils.aria.State.ACTIVEDESCENDANT, '');
   }
 
   if (newItem && newItem != oldItem ) {
     this.selectedItem_ = newItem;
     newItem.setSelected(true);
-    if (newItem.getDiv()) {
-      newItem.getDiv().focus();
-    }
+    Blockly.utils.aria.setState(this.contentsDiv_,
+        Blockly.utils.aria.State.ACTIVEDESCENDANT, newItem.getId());
   }
 
   this.updateFlyout_(oldItem, newItem);
@@ -663,8 +663,9 @@ Blockly.NewToolbox.prototype.selectParent = function() {
   if (this.selectedItem_.isCollapsible()) {
     this.selectedItem_.setExpanded(false);
     return true;
-  } else if (this.selectedItem_.parent && this.selectedItem_.isSelectable()) {
-    this.setSelectedItem(this.selectedItem_.parent);
+  } else if (this.selectedItem_.getParent() &&
+      this.selectedItem_.isSelectable()) {
+    this.setSelectedItem(this.selectedItem_.getParent());
     return true;
   }
   return false;

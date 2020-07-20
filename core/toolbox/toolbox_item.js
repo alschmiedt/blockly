@@ -17,18 +17,17 @@ goog.provide('Blockly.ToolboxItem');
 
 /**
  * Class for a Toolbox Item.
- * TODO: Figure out what type this needs to be.
- * @param {Blockly.IToolboxItem} toolboxItemDef The JSON defining the toolbox
- *     item.
+ * @param {Blockly.utils.toolbox.Toolbox} toolboxItemDef The JSON defining the
+ *     toolbox item.
  * @param {!Blockly.IToolbox} toolbox The toolbox that holds the toolbox item.
  * @constructor
+ * @abstract
  * @implements {Blockly.IToolboxItem}
  */
 Blockly.ToolboxItem = function(toolboxItemDef, toolbox) {
 
   /**
    * The id for the category.
-   * TODO: Is this a problem for xml?
    * @type {string}
    * @protected
    */
@@ -36,7 +35,7 @@ Blockly.ToolboxItem = function(toolboxItemDef, toolbox) {
 
   /**
    * The JSON definition of the toolbox item.
-   * @type {TODO}
+   * @type {Blockly.utils.toolbox.Toolbox}
    * @protected
    */
   this.toolboxItemDef_ = toolboxItemDef;
@@ -108,11 +107,11 @@ Blockly.ToolboxItem.prototype.dispose = function() {
 
 /**
  * Class for a Toolbox Item.
- * TODO: Figure out what type this needs to be.
- * @param {Blockly.IToolboxItem} toolboxItemDef The JSON defining the toolbox
- *     item.
+ * @param {Blockly.utils.toolbox.Toolbox} toolboxItemDef The JSON defining the
+ *     toolbox item.
  * @param {!Blockly.IToolbox} toolbox The toolbox that holds the toolbox item.
  * @constructor
+ * @abstract
  * @extends {Blockly.ToolboxItem}
  */
 Blockly.SelectableToolboxItem = function(toolboxItemDef, toolbox) {
@@ -139,8 +138,20 @@ Blockly.SelectableToolboxItem.prototype.getName = function() {
 };
 
 /**
+ * Gets the contents of the toolbox item. These are items that are meant to be
+ * displayed in the flyout.
+ * @return {Blockly.utils.toolbox.FlyoutDefinition} The definition of items
+ *     to be displayed in the flyout.
+ * @public
+ */
+Blockly.SelectableToolboxItem.prototype.getContents = function() {
+  return [];
+};
+
+/**
  * Set the current toolbox item as selected. No-op by default.
- * @param {boolean} isSelected True if this category is selected, false otherwise.
+ * @param {boolean} isSelected True if this category is selected, false
+ *     otherwise.
  * @public
  */
 Blockly.SelectableToolboxItem.prototype.setSelected = function(isSelected) {
@@ -155,11 +166,11 @@ Blockly.SelectableToolboxItem.prototype.onClick = function(e) {};
 
 /**
  * Class for a Toolbox Item.
- * TODO: Figure out what type this needs to be.
- * @param {Blockly.IToolboxItem} toolboxItemDef The JSON defining the toolbox
- *     item.
+ * @param {Blockly.utils.toolbox.Toolbox} toolboxItemDef The JSON defining the
+ *     toolbox item.
  * @param {!Blockly.IToolbox} toolbox The toolbox that holds the toolbox item.
  * @constructor
+ * @abstract
  * @extends {Blockly.SelectableToolboxItem}
  */
 Blockly.CollapsibleToolboxItem = function(toolboxItemDef, toolbox) {
@@ -178,9 +189,31 @@ Blockly.CollapsibleToolboxItem.prototype.isCollapsible = function() {
 };
 
 /**
+ * Gets the contents of the toolbox item. These are items that are meant to be
+ * displayed in the flyout or nested children.
+ * @return {Blockly.utils.toolbox.FlyoutDefinition|Array<Blockly.ToolboxItem>}
+ *    The definition of items to be displayed in the flyout or the nested
+ *    children of the collapsed category.
+ * @public
+ */
+Blockly.CollapsibleToolboxItem.prototype.getContents = function() {
+  return [];
+};
+
+/**
+ * Gets the parent if the toolbox item is nested.
+ * @return {Blockly.CollapsibleToolboxItem} The parent toolbox item, or null if
+ *     there are no nested items.
+ */
+Blockly.CollapsibleToolboxItem.prototype.getParent = function() {
+  return null;
+};
+
+
+/**
  * Whether the toolbox item is expanded to show it's child subcategories.
- * @return {boolean} True if the toolbox item shows it's children, false if it is
- *     collapsed.
+ * @return {boolean} True if the toolbox item shows it's children, false if it
+ *     is collapsed.
  * @public
  */
 Blockly.CollapsibleToolboxItem.prototype.isExpanded = function() {

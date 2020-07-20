@@ -18,7 +18,6 @@ goog.require('Blockly.ToolboxSeparator');
 /**
  * TODO: category -> toolbox item
  * TODO: Decide whether we want to use IToolboxItem or toolboxItem && Same with selectable
- * TODO: Go through TODOs
  * Class for a Toolbox.
  * Creates the toolbox's DOM.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace in which to create new
@@ -53,7 +52,6 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The html container for the toolbox.
-   * TODO: Do we consider this to be a public API from toolbox?
    * @type {HTMLDivElement}
    */
   this.HtmlDiv = null;
@@ -88,7 +86,6 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * Is RTL vs LTR.
-   * TODO: Do we consider this to be a public API from toolbox?
    * @type {boolean}
    */
   this.RTL = workspace.options.RTL;
@@ -109,7 +106,6 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * Position of the toolbox and flyout relative to the workspace.
-   * TODO: Do we consider this to be a public API from toolbox?
    * @type {number}
    */
   this.toolboxPosition = workspace.options.toolboxPosition;
@@ -175,15 +171,14 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
 
 /**
  * Creates the container div for the toolbox.
- * @param {!Blockly.WorkspaceSvg} workspace The workspace that the toolbox is on.
  * @return {!HTMLDivElement} The html container for the toolbox.
  * @protected
  */
-Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
+Blockly.NewToolbox.prototype.createContainer_ = function() {
   var toolboxContainer = document.createElement('div');
   Blockly.utils.dom.addClass(toolboxContainer, 'blocklyToolboxDiv');
   Blockly.utils.dom.addClass(toolboxContainer, 'blocklyNonSelectable');
-  toolboxContainer.setAttribute('dir', workspace.RTL ? 'RTL' : 'LTR');
+  toolboxContainer.setAttribute('dir', this.RTL ? 'RTL' : 'LTR');
   return toolboxContainer;
 };
 
@@ -194,7 +189,6 @@ Blockly.NewToolbox.prototype.createContainer_ = function(workspace) {
  */
 Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
   var contentsContainer = document.createElement('div');
-  // TODO: Should I be using addClass?
   Blockly.utils.dom.addClass(contentsContainer, 'blocklyToolboxContents');
   if (this.isHorizontal()) {
     contentsContainer.style.flexDirection = 'row';
@@ -323,8 +317,7 @@ Blockly.NewToolbox.prototype.createFlyout_ = function() {
 
 /**
  * Render the toolbox with all of the toolbox items. This should only be used
- * for re rendering the entire toolbox. For adding single items use
- * insertToolboxItem.
+ * for re rendering the entire toolbox.
  * @param {Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef Array holding objects
  *    containing information on the contents of the toolbox.
  *    @protected
@@ -335,11 +328,11 @@ Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
     switch (childIn['kind'].toUpperCase()) {
       case 'CATEGORY':
         var category = new Blockly.ToolboxCategory(childIn, this);
-        this.insertToolboxItem(category);
+        this.addToolboxItem_(category);
         break;
       case 'SEP':
         var separator = new Blockly.ToolboxSeparator(childIn, this);
-        this.insertToolboxItem(separator);
+        this.addToolboxItem_(separator);
         break;
       default:
         // TODO: Handle someone adding a custom component.
@@ -359,7 +352,6 @@ Blockly.NewToolbox.prototype.render = function(toolboxDef) {
   //  only re render what has changed.
   for (var i = 0; i < this.contents_.length; i++) {
     var child = this.contents_[i];
-    // TODO: getDiv() on IToolboxItem
     child.getDiv().remove();
   }
   this.contents_ = [];
@@ -369,16 +361,18 @@ Blockly.NewToolbox.prototype.render = function(toolboxDef) {
 };
 
 /**
- * Add an item to the end of the toolbox.
- * TODO: Add ability to insert at a position
+ * Adds an item to the toolbox.
  * @param {!Blockly.ToolboxItem} toolboxItem The item in the toolbox.
+ * @protected
+ * TODO: Might want to make this public and add ability to insert at position.
  */
-Blockly.NewToolbox.prototype.insertToolboxItem = function(toolboxItem) {
+Blockly.NewToolbox.prototype.addToolboxItem_ = function(toolboxItem) {
   this.contents_.push(toolboxItem);
   this.contentIds_[toolboxItem.getId()] = toolboxItem;
   if (toolboxItem.isCollapsible()) {
-    for (var i = 0; i < toolboxItem.contents_.length; i++) {
-      var child = toolboxItem.contents_[i];
+    var collapsibleItem = /** @type {Blockly.CollapsibleToolboxItem} */
+        (toolboxItem);
+    for (var i = 0, child; (child = collapsibleItem.getContents()[i]); i++) {
       this.contents_.push(child);
       this.contentIds_[child.getId()] = child;
     }
@@ -529,10 +523,9 @@ Blockly.NewToolbox.prototype.refreshTheme = function() {
  * procedures.
  */
 Blockly.NewToolbox.prototype.refreshSelection = function() {
-  // TODO: Need to use .contents_
-  if (this.selectedItem_ && !this.selectedItem_.isCollapsible() &&
-      this.selectedItem_.contents_) {
-    this.flyout_.show(this.selectedItem_.contents_);
+  if (this.selectedItem_ && this.selectedItem_.isSelectable() &&
+      !this.selectedItem_.isCollapsible()) {
+    this.flyout_.show(this.selectedItem_.getContents());
   }
 };
 
@@ -595,11 +588,11 @@ Blockly.NewToolbox.prototype.selectItemByPosition = function(position) {
  * @private
  */
 Blockly.NewToolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
-  if (oldItem == newItem || !newItem || !newItem.contents_ ||
-      newItem.isCollapsible()) {
+  if (oldItem == newItem || !newItem || newItem.isCollapsible()) {
     this.flyout_.hide();
-  } else if (newItem.contents_) {
-    this.flyout_.show(newItem.contents_);
+  } else if (newItem.isSelectable()) {
+    var selectableItem = /** @type {!Blockly.SelectableToolboxItem} */ (newItem);
+    this.flyout_.show(selectableItem.getContents());
     this.flyout_.scrollToStart();
   }
 };

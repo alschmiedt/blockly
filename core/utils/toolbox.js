@@ -69,6 +69,7 @@ Blockly.utils.toolbox.Label;
 Blockly.utils.toolbox.Category;
 
 /**
+ * TODO: Change this name not very explanatory.
  * Any information that can be used to create an item in the toolbox.
  * @typedef {Blockly.utils.toolbox.Block|
  *           Blockly.utils.toolbox.Separator|

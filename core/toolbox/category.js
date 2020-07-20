@@ -528,9 +528,7 @@ Blockly.ToolboxCategory.prototype.getName = function() {
 };
 
 /**
- * Gets the parent of the toolbox category.
- * TODO: This should go in the collapsible class.
- * @return {Blockly.ToolboxCategory} The parent of this category.
+ * @override
  */
 Blockly.ToolboxCategory.prototype.getParent = function() {
   return this.parent_;
@@ -551,6 +549,12 @@ Blockly.ToolboxCategory.prototype.getDiv = function() {
   return this.htmlDiv_;
 };
 
+/**
+ * @override
+ */
+Blockly.ToolboxCategory.prototype.getContents = function() {
+  return this.contents_;
+};
 
 /**
  * @override

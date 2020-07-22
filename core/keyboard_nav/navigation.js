@@ -130,7 +130,7 @@ Blockly.navigation.focusToolbox_ = function() {
     if (!Blockly.navigation.getMarker().getCurNode()) {
       Blockly.navigation.markAtCursor_();
     }
-    if (!toolbox.getSelected()) {
+    if (!toolbox.getSelectedItem()) {
       toolbox.selectItemByPosition(0);
     }
   }

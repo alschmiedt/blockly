@@ -149,9 +149,8 @@ goog.addDependency('../../core/theme/modern.js', ['Blockly.Themes.Modern'], ['Bl
 goog.addDependency('../../core/theme/tritanopia.js', ['Blockly.Themes.Tritanopia'], ['Blockly.Theme'], {});
 goog.addDependency('../../core/theme/zelos.js', ['Blockly.Themes.Zelos'], ['Blockly.Theme'], {});
 goog.addDependency('../../core/theme_manager.js', ['Blockly.ThemeManager'], ['Blockly.Theme'], {});
-goog.addDependency('../../core/toolbox.js', ['Blockly.Toolbox'], ['Blockly.Css', 'Blockly.Events', 'Blockly.Events.Ui', 'Blockly.Touch', 'Blockly.navigation', 'Blockly.registry', 'Blockly.tree.TreeControl', 'Blockly.tree.TreeNode', 'Blockly.utils', 'Blockly.utils.Rect', 'Blockly.utils.aria', 'Blockly.utils.colour', 'Blockly.utils.dom', 'Blockly.utils.object', 'Blockly.utils.toolbox'], {});
-goog.addDependency('../../core/toolbox/category.js', ['Blockly.ToolboxCategory'], ['Blockly.CollapsibleToolboxItem', 'Blockly.utils.aria', 'Blockly.utils.object'], {'lang': 'es5'});
-goog.addDependency('../../core/toolbox/new_toolbox.js', ['Blockly.NewToolbox'], ['Blockly.ToolboxCategory', 'Blockly.ToolboxSeparator'], {});
+goog.addDependency('../../core/toolbox/category.js', ['Blockly.ToolboxCategory'], ['Blockly.CollapsibleToolboxItem', 'Blockly.utils.aria', 'Blockly.utils.object'], {});
+goog.addDependency('../../core/toolbox/new_toolbox.js', ['Blockly.Toolbox'], ['Blockly.ToolboxCategory', 'Blockly.ToolboxSeparator'], {});
 goog.addDependency('../../core/toolbox/separator.js', ['Blockly.ToolboxSeparator'], ['Blockly.ToolboxItem'], {});
 goog.addDependency('../../core/toolbox/toolbox_item.js', ['Blockly.CollapsibleToolboxItem', 'Blockly.SelectableToolboxItem', 'Blockly.ToolboxItem'], [], {});
 goog.addDependency('../../core/tooltip.js', ['Blockly.Tooltip'], ['Blockly.utils.string'], {});

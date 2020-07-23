@@ -36,10 +36,10 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The JSON describing the contents of this toolbox.
-   * @type {Array.<Blockly.utils.toolbox.Toolbox>}
+   * @type {!Array<!Blockly.utils.toolbox.ToolboxItemDef>}
    * @protected
    */
-  this.toolboxDef_ = workspace.options.languageTree;
+  this.toolboxDef_ = workspace.options.languageTree || [];
 
   /**
    * Whether the toolbox should be laid out horizontally.
@@ -63,7 +63,7 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The list of items in the toolbox.
-   * @type {Array.<!Blockly.ToolboxItem>}
+   * @type {!Array<!Blockly.ToolboxItem>}
    * @protected
    */
   this.contents_ = [];
@@ -119,7 +119,7 @@ Blockly.NewToolbox = function(workspace) {
    * Array holding info needed to unbind events.
    * Used for disposing.
    * Ex: [[node, name, func], [node, name, func]].
-   * @type {!Array.<Array.<?>>}
+   * @type {!Array<Array<?>>}
    * @protected
    */
   this.boundEvents_ = [];
@@ -176,6 +176,7 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
  */
 Blockly.NewToolbox.prototype.createContainer_ = function() {
   var toolboxContainer = document.createElement('div');
+  toolboxContainer.setAttribute('layout', this.isHorizontal() ? 'h' : 'v');
   Blockly.utils.dom.addClass(toolboxContainer, 'blocklyToolboxDiv');
   Blockly.utils.dom.addClass(toolboxContainer, 'blocklyNonSelectable');
   toolboxContainer.setAttribute('dir', this.RTL ? 'RTL' : 'LTR');
@@ -321,9 +322,9 @@ Blockly.NewToolbox.prototype.createFlyout_ = function() {
 
 /**
  * Adds all the toolbox items to the toolbox.
- * @param {Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef Array holding
- *     objects containing information on the contents of the toolbox.
- *     @protected
+ * @param {!Array<!Blockly.utils.toolbox.ToolboxItemDef>} toolboxDef Array
+ *     holding objects containing information on the contents of the toolbox.
+ * @protected
  */
 Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
   for (var i = 0, childIn; (childIn = toolboxDef[i]); i++) {
@@ -345,8 +346,8 @@ Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
 
 /**
  * Fills the toolbox with new toolbox items and removes any old contents.
- * @param {Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef Array holding
- *     objects containing information on the contents of the toolbox.
+ * @param {!Array<!Blockly.utils.toolbox.ToolboxItemDef>} toolboxDef Array
+ *     holding objects containing information on the contents of the toolbox.
  * @package
  */
 Blockly.NewToolbox.prototype.render = function(toolboxDef) {
@@ -380,7 +381,28 @@ Blockly.NewToolbox.prototype.addToolboxItem_ = function(toolboxItem) {
       this.contentIds_[child.getId()] = child;
     }
   }
-  this.contentsDiv_.appendChild(toolboxItem.createDom());
+  var toolboxItemDom = toolboxItem.createDom();
+  if (toolboxItemDom) {
+    this.contentsDiv_.appendChild(toolboxItemDom);
+  }
+};
+
+/**
+ * Adds a style on the toolbox. Usually used to change the cursor.
+ * @param {string} style The name of the class to add.
+ * @package
+ */
+Blockly.NewToolbox.prototype.addStyle = function(style) {
+  Blockly.utils.dom.addClass(/** @type {!Element} */ (this.HtmlDiv), style);
+};
+
+/**
+ * Removes a style from the toolbox. Usually used to change the cursor.
+ * @param {string} style The name of the class to remove.
+ * @package
+ */
+Blockly.NewToolbox.prototype.removeStyle = function(style) {
+  Blockly.utils.dom.removeClass(/** @type {!Element} */ (this.HtmlDiv), style);
 };
 
 /**
@@ -420,7 +442,7 @@ Blockly.NewToolbox.prototype.getClientRect = function() {
 /**
  * Gets the toolbox item with the given id.
  * @param {string} id The id of the toolbox item.
- * @return {Blockly.ToolboxItem} The toolbox item with the given id, or null if
+ * @return {?Blockly.ToolboxItem} The toolbox item with the given id, or null if
  *     no item exists.
  * @public
  */
@@ -448,7 +470,7 @@ Blockly.NewToolbox.prototype.getHeight = function() {
 
 /**
  * Gets the toolbox flyout.
- * @return {Blockly.Flyout} The toolbox flyout.
+ * @return {?Blockly.Flyout} The toolbox flyout.
  * @public
  */
 Blockly.NewToolbox.prototype.getFlyout = function() {
@@ -553,17 +575,18 @@ Blockly.NewToolbox.prototype.setVisible = function(isVisible) {
 
 /**
  * Sets the given item as selected.
- * @param {Blockly.SelectableToolboxItem} newItem The toolbox item to select.
+ * @param {?Blockly.SelectableToolboxItem} newItem The toolbox item to select.
  * @public
  */
 Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   var oldItem = this.selectedItem_;
 
-  if ((!newItem && !oldItem)) {
+  if (!newItem && !oldItem) {
     return;
   }
   newItem = /** @type {Blockly.SelectableToolboxItem} */ (newItem);
-  // Do not deselect if the oldItem has children and has been previously clicked on.
+  // Do not deselect if the oldItem has children and has been previously clicked
+  // on.
   if (oldItem && (!oldItem.isCollapsible() || oldItem != newItem)) {
     this.selectedItem_ = null;
     oldItem.setSelected(false);
@@ -598,8 +621,8 @@ Blockly.NewToolbox.prototype.selectItemByPosition = function(position) {
 
 /**
  * Decides whether to hide or show the flyout depending on the selected item.
- * @param {Blockly.ToolboxItem} oldItem The previously selected toolbox item.
- * @param {Blockly.ToolboxItem} newItem The newly selected toolbox item.
+ * @param {?Blockly.ToolboxItem} oldItem The previously selected toolbox item.
+ * @param {?Blockly.ToolboxItem} newItem The newly selected toolbox item.
  * @private
  */
 Blockly.NewToolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
@@ -614,9 +637,9 @@ Blockly.NewToolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
 
 /**
  * Emits an event when a new toolbox item is selected.
- * @param {Blockly.SelectableToolboxItem} oldItem The previously selected
+ * @param {?Blockly.SelectableToolboxItem} oldItem The previously selected
  *     toolbox item.
- * @param {Blockly.SelectableToolboxItem} newItem The newly selected toolbox
+ * @param {?Blockly.SelectableToolboxItem} newItem The newly selected toolbox
  *     item.
  * @private
  */
@@ -751,7 +774,7 @@ Blockly.NewToolbox.prototype.selectPrevious_ = function() {
 
 /**
  * Gets the selected item.
- * @return {Blockly.ToolboxItem} The selected item, or null if no item is
+ * @return {?Blockly.ToolboxItem} The selected item, or null if no item is
  *     currently selected.
  * @public
  */
@@ -800,6 +823,7 @@ Blockly.Css.register([
     'background-color: #ddd;',
     'overflow-x: visible;',
     'overflow-y: auto;',
+    'padding: 4px 0 4px 0;',
     'position: absolute;',
     'z-index: 70;', /* so blocks go under toolbox when dragging */
     '-webkit-tap-highlight-color: transparent;', /* issue #1345 */
@@ -813,30 +837,30 @@ Blockly.Css.register([
     'padding-bottom: 3px',
   '}',
 
+  '.blocklyToolboxCategory:not(.blocklyTreeSelected):hover {',
+    'background-color: rgba(255, 255, 255, 0.2);',
+  '}',
+
+  '.blocklyToolboxDiv[layout="h"] .blocklyToolboxCategory {',
+    'margin: 1px 5px 1px 0;',
+  '}',
+
+  '.blocklyToolboxDiv[dir="RTL"][layout="h"] .blocklyToolboxCategory {',
+    'margin: 1px 0 1px 5px;',
+  '}',
+
   '.blocklyToolboxContents {',
     'display: flex;',
     'flex-wrap: wrap;',
     'flex-direction: column;',
   '}',
 
-  '.blocklyTreeRoot {',
-    'padding: 4px 0;',
-  '}',
-
   '.blocklyTreeRow {',
     'height: 22px;',
     'line-height: 22px;',
     'padding-right: 8px;',
-    'white-space: nowrap;',
     'pointer-events: none',
-  '}',
-
-  '.blocklyHorizontalTree {',
-    'margin: 1px 5px 8px 0;',
-  '}',
-
-  '.blocklyHorizontalTreeRtl {',
-    'margin: 1px 0 8px 5px;',
+    'white-space: nowrap;',
   '}',
 
   '.blocklyToolboxDiv[dir="RTL"] .blocklyTreeRow {',
@@ -844,9 +868,6 @@ Blockly.Css.register([
     'padding-right: 0px',
   '}',
 
-  '.blocklyTreeRow:not(.blocklyTreeSelected):hover {',
-    'background-color: rgba(255, 255, 255, 0.2);',
-  '}',
 
   '.blocklyTreeSeparator {',
     'border-bottom: solid #e5e5e5 1px;',
@@ -854,39 +875,41 @@ Blockly.Css.register([
     'margin: 5px 0;',
   '}',
 
-  '.blocklyTreeSeparatorHorizontal {',
+  '.blocklyToolboxDiv[layout="h"] .blocklyTreeSeparator {',
     'border-right: solid #e5e5e5 1px;',
-    'width: 0;',
+    'border-bottom: none;',
+    'height: auto;',
+    'margin: 0 5px 0 5px;',
     'padding: 5px 0;',
-    'margin: 0 5px;',
+    'width: 0;',
   '}',
 
   '.blocklyTreeIcon {',
     'background-image: url(<<<PATH>>>/sprites.png);',
     'height: 16px;',
     'vertical-align: middle;',
-    'width: 16px;',
     'visibility: hidden;',
+    'width: 16px;',
   '}',
 
-  '.blocklyTreeIconClosedLtr {',
+  '.blocklyTreeIconClosed {',
     'background-position: -32px -1px;',
   '}',
 
-  '.blocklyTreeIconClosedRtl {',
+  '.blocklyToolboxDiv[dir="RTL"] .blocklyTreeIconClosed {',
     'background-position: 0 -1px;',
+  '}',
+
+  '.blocklyTreeSelected>.blocklyTreeIconClosed {',
+    'background-position: -32px -17px;',
+  '}',
+
+  '.blocklyToolboxDiv[dir="RTL"] .blocklyTreeSelected>.blocklyTreeIconClosed {',
+    'background-position: 0 -17px;',
   '}',
 
   '.blocklyTreeIconOpen {',
     'background-position: -16px -1px;',
-  '}',
-
-  '.blocklyTreeSelected>.blocklyTreeIconClosedLtr {',
-    'background-position: -32px -17px;',
-  '}',
-
-  '.blocklyTreeSelected>.blocklyTreeIconClosedRtl {',
-    'background-position: 0 -17px;',
   '}',
 
   '.blocklyTreeSelected>.blocklyTreeIconOpen {',

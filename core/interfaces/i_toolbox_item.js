@@ -90,7 +90,7 @@ Blockly.ISelectableToolboxItem.prototype.onClick;
 /**
  * Gets the contents of the toolbox item. These are items that are meant to be
  * displayed in the flyout.
- * @return {Blockly.utils.toolbox.FlyoutDefinition} The definition of items
+ * @return {!Array.<Blockly.utils.toolbox.FlyoutItemDef>} The definition of items
  *     to be displayed in the flyout.
  * @public
  */
@@ -118,7 +118,7 @@ Blockly.ICollapsibleToolboxItem.prototype.toggleExpanded;
 
 /**
  * Gets the contents to display in the flyout or the nested toolbox items.
- * @return {Blockly.utils.toolbox.FlyoutDefinition|Array<Blockly.ToolboxItem>}
+ * @return {!Array.<Blockly.utils.toolbox.FlyoutItemDef>|!Array.<Blockly.ToolboxItem>}
  *    The definition of items to be displayed in the flyout or the nested
  *    children of the collapsed category.
  * @public

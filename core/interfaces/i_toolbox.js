@@ -31,7 +31,7 @@ Blockly.IToolbox.prototype.init;
 
 /**
  * Fills the toolbox with new toolbox items and removes any old contents.
- * @param {Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef Array holding
+ * @param {Array.<Blockly.utils.toolbox.ToolboxItemDef>} toolboxDef Array holding
  *     objects containing information on the contents of the toolbox.
  */
 Blockly.IToolbox.prototype.render;

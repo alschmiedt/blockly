@@ -30,7 +30,8 @@ Blockly.utils.toolbox.Block;
  * @typedef {{
  *            kind:string,
  *            id:?string,
- *            gap:?number
+ *            gap:?number,
+ *            classConfig:?Blockly.ToolboxSeparator.ClassConfig
  *          }}
  */
 Blockly.utils.toolbox.Separator;
@@ -63,13 +64,13 @@ Blockly.utils.toolbox.Label;
  *            id:?string,
  *            categorystyle:?string,
  *            colour:?string,
- *            contents:Array.<Blockly.utils.toolbox.Toolbox>
+ *            contents:!Array.<Blockly.utils.toolbox.ToolboxItemDef>,
+ *            classConfig:?Blockly.ToolboxCategory.ClassConfig
  *          }}
  */
 Blockly.utils.toolbox.Category;
 
 /**
- * TODO: Change this name not very explanatory.
  * Any information that can be used to create an item in the toolbox.
  * @typedef {Blockly.utils.toolbox.Block|
  *           Blockly.utils.toolbox.Separator|
@@ -77,32 +78,32 @@ Blockly.utils.toolbox.Category;
  *           Blockly.utils.toolbox.Label|
  *           Blockly.utils.toolbox.Category}
  */
-Blockly.utils.toolbox.Toolbox;
+Blockly.utils.toolbox.ToolboxItemDef;
 
 /**
  * All of the different types that can create a toolbox.
  * @typedef {Node|
  *           NodeList|
- *           Array.<Blockly.utils.toolbox.Toolbox>|
+ *           Array.<Blockly.utils.toolbox.ToolboxItemDef>|
  *           Array.<Node>}
  */
 Blockly.utils.toolbox.ToolboxDefinition;
 
 /**
  * All the different types that can be displayed in a flyout.
- * @typedef {Array.<Blockly.utils.toolbox.Block|
- *                  Blockly.utils.toolbox.Separator|
- *                  Blockly.utils.toolbox.Button|
- *                  Blockly.utils.toolbox.Label>}
+ * @typedef {Blockly.utils.toolbox.Block|
+ *           Blockly.utils.toolbox.Separator|
+ *           Blockly.utils.toolbox.Button|
+ *           Blockly.utils.toolbox.Label}
  */
-Blockly.utils.toolbox.FlyoutDefinition;
+Blockly.utils.toolbox.FlyoutItemDef;
 
 /**
  * Parse the provided toolbox definition into a consistent format.
- * @param {Blockly.utils.toolbox.ToolboxDefinition} toolboxDef The definition of the
- *    toolbox in one of its many forms.
- * @return {Array.<Blockly.utils.toolbox.Toolbox>} Array of JSON holding
- *    information on toolbox contents.
+ * @param {Blockly.utils.toolbox.ToolboxDefinition} toolboxDef The definition
+ *     of the toolbox in one of its many forms.
+ * @return {Array.<Blockly.utils.toolbox.ToolboxItemDef>} Array of JSON holding
+ *     information on toolbox contents.
  * @package
  */
 Blockly.utils.toolbox.convertToolboxToJSON = function(toolboxDef) {
@@ -116,7 +117,7 @@ Blockly.utils.toolbox.convertToolboxToJSON = function(toolboxDef) {
       console.warn('Due to some performance issues, defining a toolbox using' +
           'JSON is not ready yet. Please define your toolbox using xml.');
     }
-    return /** @type {!Array.<Blockly.utils.toolbox.Toolbox>} */ (toolboxDef);
+    return /** @type {!Array.<Blockly.utils.toolbox.ToolboxItem>} */ (toolboxDef);
   }
 
   return Blockly.utils.toolbox.toolboxXmlToJson_(toolboxDef);
@@ -126,8 +127,8 @@ Blockly.utils.toolbox.convertToolboxToJSON = function(toolboxDef) {
  * Convert the xml for a toolbox to JSON.
  * @param {!NodeList|!Node|!Array.<Node>} toolboxDef The
  *     definition of the toolbox in one of its many forms.
- * @return {!Array.<Blockly.utils.toolbox.Toolbox>} A list of objects in the
- *    toolbox.
+ * @return {!Array.<Blockly.utils.toolbox.ToolboxItemDef>} A list of objects in
+ *     the toolbox.
  * @private
  */
 Blockly.utils.toolbox.toolboxXmlToJson_ = function(toolboxDef) {
@@ -172,8 +173,8 @@ Blockly.utils.toolbox.toolboxXmlToJson_ = function(toolboxDef) {
 
 /**
  * Whether or not the toolbox definition has categories or not.
- * @param {Node|Array.<Blockly.utils.toolbox.Toolbox>} toolboxDef The definition
- *    of the toolbox. Either in xml or JSON.
+ * @param {Node|Array.<Blockly.utils.toolbox.ToolboxItemDef>} toolboxDef The
+ *     definition of the toolbox. Either in xml or JSON.
  * @return {boolean} True if the toolbox has categories.
  * @package
  */

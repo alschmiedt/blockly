@@ -73,28 +73,28 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox, opt_parent) {
 
   /**
    * The html container for the category.
-   * @type {?HTMLDivElement}
+   * @type {?Element}
    * @protected
    */
   this.htmlDiv_ = null;
 
   /**
    * The html element for the category row.
-   * @type {?HTMLDivElement}
+   * @type {?Element}
    * @protected
    */
   this.rowDiv_ = null;
 
   /**
    * The html element for the toolbox icon.
-   * @type {?HTMLSpanElement}
+   * @type {?Element}
    * @protected
    */
   this.iconSpan_ = null;
 
   /**
    * Container for any children categories.
-   * @type {?HTMLDivElement}
+   * @type {?Element}
    * @protected
    */
   this.subcategoriesDiv_ = null;
@@ -193,10 +193,10 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
   this.htmlDiv_ = document.createElement('div');
   Blockly.utils.dom.addClass(this.htmlDiv_, this.classConfig_['container']);
   Blockly.utils.aria.setRole(this.htmlDiv_, Blockly.utils.aria.Role.TREEITEM);
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.SELECTED,
-      false);
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.LEVEL,
-      this.level_);
+  Blockly.utils.aria.setState(/** @type {!Element} */ (this.htmlDiv_),
+      Blockly.utils.aria.State.SELECTED,false);
+  Blockly.utils.aria.setState(/** @type {!Element} */ (this.htmlDiv_),
+      Blockly.utils.aria.State.LEVEL, this.level_);
   this.htmlDiv_.setAttribute('id', this.id_);
 
   this.rowDiv_ = document.createElement('div');
@@ -210,11 +210,12 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
 
   var labelSpan = this.createLabelSpan_();
   this.rowDiv_.appendChild(labelSpan);
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.LABELLEDBY,
-      labelSpan.getAttribute('id'));
+  Blockly.utils.aria.setState(/** @type {!Element} */ (this.htmlDiv_),
+      Blockly.utils.aria.State.LABELLEDBY, labelSpan.getAttribute('id'));
 
   if (this.hasChildren()) {
-    this.subcategoriesDiv_ = this.createSubCategories_(this.contents_);
+    var contents = /** @type {!Array<!Blockly.ToolboxItem>} */ (this.contents_);
+    this.subcategoriesDiv_ = this.createSubCategories_(contents);
     Blockly.utils.aria.setRole(this.subcategoriesDiv_,
         Blockly.utils.aria.Role.GROUP);
     this.htmlDiv_.appendChild(this.subcategoriesDiv_);
@@ -229,7 +230,7 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
 
 /**
  * Creates the span that holds the category icon.
- * @return {!HTMLSpanElement} The span that holds the category icon.
+ * @return {!Element} The span that holds the category icon.
  * @protected
  */
 Blockly.ToolboxCategory.prototype.createIconSpan_ = function() {
@@ -248,7 +249,7 @@ Blockly.ToolboxCategory.prototype.createIconSpan_ = function() {
 /**
  * Creates the span that holds the category label.
  * This should have an id for accessibility purposes.
- * @return {!HTMLSpanElement} The span that holds the category label.
+ * @return {!Element} The span that holds the category label.
  * @protected
  */
 Blockly.ToolboxCategory.prototype.createLabelSpan_ = function() {
@@ -261,8 +262,8 @@ Blockly.ToolboxCategory.prototype.createLabelSpan_ = function() {
 
 /**
  * Create the dom for all subcategories.
- * @param {!Array<!Blockly.utils.toolbox.ToolboxItemDef>} contents The category contents.
- * @return {!HTMLDivElement} The div holding all the subcategories.
+ * @param {!Array<!Blockly.ToolboxItem>} contents The category contents.
+ * @return {!Element} The div holding all the subcategories.
  * @protected
  */
 Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
@@ -284,7 +285,8 @@ Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
  * @public
  */
 Blockly.ToolboxCategory.prototype.refreshTheme = function() {
-  this.colour_ = this.getColour_(this.toolboxItemDef_);
+  this.colour_ = this.getColour_(/** @type {Blockly.utils.toolbox.Category} **/
+      (this.toolboxItemDef_));
   this.addColour_(this.colour_);
 };
 
@@ -323,6 +325,7 @@ Blockly.ToolboxCategory.prototype.getColour_ = function(categoryDef) {
   } else {
     return this.parseColour_(colour);
   }
+  return '';
 };
 
 /**
@@ -343,6 +346,7 @@ Blockly.ToolboxCategory.prototype.getColourfromStyle_ = function(styleName) {
           '" must exist and contain a colour value');
     }
   }
+  return '';
 };
 
 /**
@@ -393,8 +397,8 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
     this.subcategoriesDiv_.style.display = 'none';
     this.closeIcon_(this.iconSpan_);
   }
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.EXPANDED,
-      isExpanded);
+  Blockly.utils.aria.setState(/** @type {!Element} */ (this.htmlDiv_),
+      Blockly.utils.aria.State.EXPANDED, isExpanded);
 
   if (this.hasChildren()) {
     for (var i = 0; i < this.contents_.length; i++) {
@@ -408,7 +412,7 @@ Blockly.ToolboxCategory.prototype.setExpanded = function(isExpanded) {
 
 /**
  * Adds appropriate classes to display an open icon.
- * @param {?HTMLSpanElement} iconDiv The div that holds the icon.
+ * @param {?Element} iconDiv The div that holds the icon.
  * @protected
  */
 Blockly.ToolboxCategory.prototype.openIcon_ = function(iconDiv) {
@@ -422,7 +426,7 @@ Blockly.ToolboxCategory.prototype.openIcon_ = function(iconDiv) {
 
 /**
  * Adds appropriate classes to display a closed icon.
- * @param {?HTMLSpanElement} iconDiv The div that holds the icon.
+ * @param {?Element} iconDiv The div that holds the icon.
  * @protected
  */
 Blockly.ToolboxCategory.prototype.closeIcon_ = function(iconDiv) {
@@ -488,7 +492,7 @@ Blockly.ToolboxCategory.prototype.isCollapsible = function() {
 /**
  * @override
  */
-Blockly.ToolboxCategory.prototype.onClick = function(e) {
+Blockly.ToolboxCategory.prototype.onClick = function(_e) {
   this.toggleExpanded();
 };
 
@@ -503,7 +507,8 @@ Blockly.ToolboxCategory.prototype.setSelected = function(isSelected) {
     this.rowDiv_.style.backgroundColor = '';
     Blockly.utils.dom.removeClass(this.rowDiv_, this.classConfig_['selected']);
   }
-  Blockly.utils.aria.setState(this.htmlDiv_, Blockly.utils.aria.State.SELECTED, isSelected);
+  Blockly.utils.aria.setState(/** @type {!Element} */ (this.htmlDiv_),
+      Blockly.utils.aria.State.SELECTED, isSelected);
 };
 
 /**

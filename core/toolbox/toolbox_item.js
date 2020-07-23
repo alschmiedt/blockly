@@ -56,7 +56,7 @@ Blockly.ToolboxItem = function(toolboxItemDef, toolbox) {
 
 /**
  * Creates the dom for a toolbox item.
- * @return {?HTMLDivElement} The div for the toolbox item.
+ * @return {?Element} The div for the toolbox item.
  * @public
  */
 Blockly.ToolboxItem.prototype.createDom = function() {
@@ -65,7 +65,7 @@ Blockly.ToolboxItem.prototype.createDom = function() {
 
 /**
  * Gets the div for the toolbox item.
- * @return {?HTMLDivElement} The div for the toolbox item.
+ * @return {?Element} The div for the toolbox item.
  * @public
  */
 Blockly.ToolboxItem.prototype.getDiv = function() {
@@ -139,8 +139,8 @@ Blockly.SelectableToolboxItem.prototype.getName = function() {
 /**
  * Gets the contents of the toolbox item. These are items that are meant to be
  * displayed in the flyout.
- * @return {!Array<!Blockly.utils.toolbox.FlyoutItemDef>} The definition of items
- *     to be displayed in the flyout.
+ * @return {!Array<!Blockly.utils.toolbox.FlyoutItemDef>|string} The definition
+ *     of items to be displayed in the flyout.
  * @public
  */
 Blockly.SelectableToolboxItem.prototype.getContents = function() {
@@ -149,19 +149,19 @@ Blockly.SelectableToolboxItem.prototype.getContents = function() {
 
 /**
  * Set the current toolbox item as selected. No-op by default.
- * @param {boolean} isSelected True if this category is selected, false
+ * @param {boolean} _isSelected True if this category is selected, false
  *     otherwise.
  * @public
  */
-Blockly.SelectableToolboxItem.prototype.setSelected = function(isSelected) {
+Blockly.SelectableToolboxItem.prototype.setSelected = function(_isSelected) {
 };
 
 /**
  * Event listener for when the toolbox item is clicked.
- * @param {!Event} e Click event to handle.
+ * @param {!Event} _e Click event to handle.
  * @public
  */
-Blockly.SelectableToolboxItem.prototype.onClick = function(e) {};
+Blockly.SelectableToolboxItem.prototype.onClick = function(_e) {};
 
 /**
  * Class for an item in the toolbox that is collapsible.
@@ -191,7 +191,8 @@ Blockly.CollapsibleToolboxItem.prototype.isCollapsible = function() {
  * Gets the contents of the toolbox item. These are items that are meant to be
  * displayed in the flyout or nested children.
  * @return {!Array<!Blockly.utils.toolbox.FlyoutItemDef>|
- *          !Array<!Blockly.ToolboxItem>}
+ *          !Array<!Blockly.ToolboxItem>|
+ *          string}
  *    The definition of items to be displayed in the flyout or the nested
  *    children of the collapsed category.
  * @public

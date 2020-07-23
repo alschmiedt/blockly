@@ -50,13 +50,13 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The html container for the toolbox.
-   * @type {HTMLDivElement}
+   * @type {?Element}
    */
   this.HtmlDiv = null;
 
   /**
    * The html container for the contents of a toolbox.
-   * @type {HTMLDivElement}
+   * @type {?Element}
    * @protected
    */
   this.contentsDiv_ = null;
@@ -90,14 +90,14 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The flyout for the toolbox.
-   * @type {Blockly.Flyout}
+   * @type {?Blockly.Flyout}
    * @private
    */
   this.flyout_ = null;
 
   /**
    * The id of the toolbox item as the key and the toolbox item as the value.
-   * @type {Object<string, Blockly.ToolboxItem>}
+   * @type {!Object<string, Blockly.ToolboxItem>}
    * @protected
    */
   this.contentIds_ = {};
@@ -110,7 +110,7 @@ Blockly.NewToolbox = function(workspace) {
 
   /**
    * The currently selected item.
-   * @type {Blockly.ToolboxItem}
+   * @type {?Blockly.SelectableToolboxItem}
    * @protected
    */
   this.selectedItem_ = null;
@@ -119,7 +119,7 @@ Blockly.NewToolbox = function(workspace) {
    * Array holding info needed to unbind events.
    * Used for disposing.
    * Ex: [[node, name, func], [node, name, func]].
-   * @type {!Array<Array<?>>}
+   * @type {!Array<!Array<?>>}
    * @protected
    */
   this.boundEvents_ = [];
@@ -150,13 +150,13 @@ Blockly.NewToolbox.prototype.init = function() {
 /**
  * Creates the dom for the toolbox.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace this toolbox is on.
- * @return {!HTMLDivElement} The html container for the toolbox.
+ * @return {!Element} The html container for the toolbox.
  * @protected
  */
 Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
   var svg = workspace.getParentSvg();
 
-  var container = this.createContainer_(workspace);
+  var container = this.createContainer_();
 
   this.contentsDiv_ = this.createContentsContainer_();
   this.contentsDiv_.tabIndex = 0;
@@ -171,7 +171,7 @@ Blockly.NewToolbox.prototype.createDom_ = function(workspace) {
 
 /**
  * Creates the container div for the toolbox.
- * @return {!HTMLDivElement} The html container for the toolbox.
+ * @return {!Element} The html container for the toolbox.
  * @protected
  */
 Blockly.NewToolbox.prototype.createContainer_ = function() {
@@ -185,7 +185,7 @@ Blockly.NewToolbox.prototype.createContainer_ = function() {
 
 /**
  * Creates the container for all the contents in the toolbox.
- * @return {!HTMLDivElement} The html container for the toolbox contents.
+ * @return {!Element} The html container for the toolbox contents.
  * @protected
  */
 Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
@@ -199,8 +199,8 @@ Blockly.NewToolbox.prototype.createContentsContainer_ = function() {
 
 /**
  * Adds event listeners to the toolbox container div.
- * @param {!HTMLDivElement} container The html container for the toolbox.
- * @param {!HTMLDivElement} contentsContainer The html container for the contents
+ * @param {!Element} container The html container for the toolbox.
+ * @param {!Element} contentsContainer The html container for the contents
  *     of the toolbox.
  * @protected
  */
@@ -220,7 +220,7 @@ Blockly.NewToolbox.prototype.addToolboxListeners_ = function(container,
 
 /**
  * Handles on click events for when the toolbox or toolbox items are clicked.
- * @param {Event} e Click event to handle.
+ * @param {!Event} e Click event to handle.
  * @protected
  */
 Blockly.NewToolbox.prototype.onClick_ = function(e) {
@@ -245,7 +245,7 @@ Blockly.NewToolbox.prototype.onClick_ = function(e) {
 
 /**
  * Handles key down events for the toolbox.
- * @param {KeyboardEvent} e The key down event.
+ * @param {!KeyboardEvent} e The key down event.
  * @protected
  */
 Blockly.NewToolbox.prototype.onKeyDown_ = function(e) {
@@ -331,10 +331,12 @@ Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
     // TODO: Add classes to registry so we can avoid this switch statement.
     switch (childIn['kind'].toUpperCase()) {
       case 'CATEGORY':
+        childIn = /** @type {Blockly.utils.toolbox.Category} */ (childIn);
         var category = new Blockly.ToolboxCategory(childIn, this);
         this.addToolboxItem_(category);
         break;
       case 'SEP':
+        childIn = /** @type {Blockly.utils.toolbox.Separator} */ (childIn);
         var separator = new Blockly.ToolboxSeparator(childIn, this);
         this.addToolboxItem_(separator);
         break;
@@ -407,7 +409,7 @@ Blockly.NewToolbox.prototype.removeStyle = function(style) {
 
 /**
  * Return the deletion rectangle for this toolbox.
- * @return {Blockly.utils.Rect} Rectangle in which to delete.
+ * @return {?Blockly.utils.Rect} Rectangle in which to delete.
  * @public
  */
 Blockly.NewToolbox.prototype.getClientRect = function() {
@@ -575,13 +577,13 @@ Blockly.NewToolbox.prototype.setVisible = function(isVisible) {
 
 /**
  * Sets the given item as selected.
- * @param {?Blockly.SelectableToolboxItem} newItem The toolbox item to select.
+ * @param {?Blockly.ToolboxItem} newItem The toolbox item to select.
  * @public
  */
 Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   var oldItem = this.selectedItem_;
 
-  if (!newItem && !oldItem) {
+  if ((!newItem && !oldItem) || !newItem.isSelectable()) {
     return;
   }
   newItem = /** @type {Blockly.SelectableToolboxItem} */ (newItem);
@@ -590,14 +592,14 @@ Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   if (oldItem && (!oldItem.isCollapsible() || oldItem != newItem)) {
     this.selectedItem_ = null;
     oldItem.setSelected(false);
-    Blockly.utils.aria.setState(this.contentsDiv_,
+    Blockly.utils.aria.setState(/** @type {!Element} */ (this.contentsDiv_),
         Blockly.utils.aria.State.ACTIVEDESCENDANT, '');
   }
 
   if (newItem && newItem != oldItem ) {
     this.selectedItem_ = newItem;
     newItem.setSelected(true);
-    Blockly.utils.aria.setState(this.contentsDiv_,
+    Blockly.utils.aria.setState(/** @type {!Element} */ (this.contentsDiv_),
         Blockly.utils.aria.State.ACTIVEDESCENDANT, newItem.getId());
   }
 

@@ -13,6 +13,9 @@
 goog.provide('Blockly.utils.toolbox');
 
 
+goog.requireType('Blockly.ToolboxCategory');
+goog.requireType('Blockly.ToolboxSeparator');
+
 /**
  * The information needed to create a block in the toolbox.
  * @typedef {{
@@ -117,7 +120,7 @@ Blockly.utils.toolbox.convertToolboxToJSON = function(toolboxDef) {
       console.warn('Due to some performance issues, defining a toolbox using' +
           'JSON is not ready yet. Please define your toolbox using xml.');
     }
-    return /** @type {!Array.<Blockly.utils.toolbox.ToolboxItem>} */ (toolboxDef);
+    return /** @type {!Array.<Blockly.utils.toolbox.ToolboxItemDef>} */ (toolboxDef);
   }
 
   return Blockly.utils.toolbox.toolboxXmlToJson_(toolboxDef);

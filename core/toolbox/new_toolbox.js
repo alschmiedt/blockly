@@ -334,11 +334,19 @@ Blockly.NewToolbox.prototype.addContents_ = function(toolboxDef) {
         childIn = /** @type {Blockly.utils.toolbox.Category} */ (childIn);
         var category = new Blockly.ToolboxCategory(childIn, this);
         this.addToolboxItem_(category);
+        var categoryDom = category.createDom();
+        if (categoryDom) {
+          this.contentsDiv_.appendChild(categoryDom);
+        }
         break;
       case 'SEP':
         childIn = /** @type {Blockly.utils.toolbox.Separator} */ (childIn);
         var separator = new Blockly.ToolboxSeparator(childIn, this);
         this.addToolboxItem_(separator);
+        var separatorDom = separator.createDom();
+        if (separatorDom) {
+          this.contentsDiv_.appendChild(separatorDom);
+        }
         break;
       default:
         // TODO: Handle someone adding a custom component.
@@ -370,7 +378,6 @@ Blockly.NewToolbox.prototype.render = function(toolboxDef) {
  * Adds an item to the toolbox.
  * @param {!Blockly.ToolboxItem} toolboxItem The item in the toolbox.
  * @private
- * TODO: Might want to make this public and add ability to insert at position.
  */
 Blockly.NewToolbox.prototype.addToolboxItem_ = function(toolboxItem) {
   this.contents_.push(toolboxItem);
@@ -379,13 +386,8 @@ Blockly.NewToolbox.prototype.addToolboxItem_ = function(toolboxItem) {
     var collapsibleItem = /** @type {Blockly.CollapsibleToolboxItem} */
         (toolboxItem);
     for (var i = 0, child; (child = collapsibleItem.getContents()[i]); i++) {
-      this.contents_.push(child);
-      this.contentIds_[child.getId()] = child;
+      this.addToolboxItem_(child);
     }
-  }
-  var toolboxItemDom = toolboxItem.createDom();
-  if (toolboxItemDom) {
-    this.contentsDiv_.appendChild(toolboxItemDom);
   }
 };
 
@@ -583,7 +585,7 @@ Blockly.NewToolbox.prototype.setVisible = function(isVisible) {
 Blockly.NewToolbox.prototype.setSelectedItem = function(newItem) {
   var oldItem = this.selectedItem_;
 
-  if ((!newItem && !oldItem) || !newItem.isSelectable()) {
+  if ((!newItem && !oldItem) || (newItem && !newItem.isSelectable())) {
     return;
   }
   newItem = /** @type {Blockly.SelectableToolboxItem} */ (newItem);
@@ -695,11 +697,11 @@ Blockly.NewToolbox.prototype.selectParent_ = function() {
     return false;
   }
 
-  if (this.selectedItem_.isCollapsible()) {
+  if (this.selectedItem_.isCollapsible() && this.selectedItem_.isExpanded()) {
     this.selectedItem_.setExpanded(false);
     return true;
   } else if (this.selectedItem_.getParent() &&
-      this.selectedItem_.isSelectable()) {
+      this.selectedItem_.getParent().isSelectable()) {
     this.setSelectedItem(this.selectedItem_.getParent());
     return true;
   }
@@ -830,10 +832,6 @@ Blockly.Css.register([
     '-webkit-tap-highlight-color: transparent;', /* issue #1345 */
   '}',
 
-  '.blocklyToolboxDiv:focus {',
-    'outline: none;',
-  '}',
-
   '.blocklyToolboxCategory {',
     'padding-bottom: 3px',
   '}',
@@ -854,6 +852,10 @@ Blockly.Css.register([
     'display: flex;',
     'flex-wrap: wrap;',
     'flex-direction: column;',
+  '}',
+
+  '.blocklyToolboxContents:focus {',
+    'outline: none;',
   '}',
 
   '.blocklyTreeRow {',

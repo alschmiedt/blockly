@@ -806,7 +806,6 @@ Blockly.NewToolbox.prototype.dispose = function() {
 
 /**
  * CSS for Toolbox.  See css.js for use.
- * TODO: add -moz- to flex-direction.
  */
 Blockly.Css.register([
   /* eslint-disable indent */

@@ -419,8 +419,8 @@ Blockly.ToolboxCategory.prototype.openIcon_ = function(iconDiv) {
   if (!iconDiv) {
     return;
   }
-  // TODO: Double check this.
-  iconDiv.className = iconDiv.className.replace(' ' + this.classConfig_['closedIcon'], '');
+
+  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['closedIcon']);
   Blockly.utils.dom.addClass(iconDiv, this.classConfig_['openIcon']);
 };
 
@@ -433,7 +433,7 @@ Blockly.ToolboxCategory.prototype.closeIcon_ = function(iconDiv) {
   if (!iconDiv) {
     return;
   }
-  iconDiv.className = iconDiv.className.replace(' ' + this.classConfig_['openIcon'], '');
+  Blockly.utils.dom.removeClass(iconDiv, this.classConfig_['openIcon']);
   Blockly.utils.dom.addClass(iconDiv, this.classConfig_['closedIcon']);
 };
 

@@ -62,7 +62,7 @@ Blockly.ToolboxCategory = function(categoryDef, toolbox, opt_parent) {
    * @type {number}
    * @protected
    */
-  this.level_ = this.parent_ ? this.parent_.getLevel() + 1 : 1;
+  this.level_ = this.parent_ ? this.parent_.getLevel() + 1 : 0;
 
   /**
    * The colour of the category.
@@ -158,6 +158,12 @@ Blockly.utils.object.inherits(Blockly.ToolboxCategory, Blockly.CollapsibleToolbo
 Blockly.ToolboxCategory.ClassConfig;
 
 /**
+ * The number of pixels to move the category over at each nested level.
+ * @type {number}
+ */
+Blockly.ToolboxCategory.NestedValue = 19;
+
+/**
  * Parse the contents array depending on if the category has children, is a
  * dynamic category, or if it's contents are meant to be shown in the flyout.
  * @param {!Blockly.utils.toolbox.Category} categoryDef The information needed
@@ -190,8 +196,7 @@ Blockly.ToolboxCategory.prototype.parseContents_ = function(categoryDef, hasChil
  * @override
  */
 Blockly.ToolboxCategory.prototype.createDom = function() {
-  this.htmlDiv_ = document.createElement('div');
-  Blockly.utils.dom.addClass(this.htmlDiv_, this.classConfig_['container']);
+  this.htmlDiv_ = this.createContainer_();
   Blockly.utils.aria.setRole(this.htmlDiv_, Blockly.utils.aria.Role.TREEITEM);
   Blockly.utils.aria.setState(/** @type {!Element} */ (this.htmlDiv_),
       Blockly.utils.aria.State.SELECTED,false);
@@ -199,9 +204,7 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
       Blockly.utils.aria.State.LEVEL, this.level_);
   this.htmlDiv_.setAttribute('id', this.id_);
 
-  this.rowDiv_ = document.createElement('div');
-  Blockly.utils.dom.addClass(this.rowDiv_, this.classConfig_['row']);
-  this.rowDiv_.style.pointerEvents = 'none';
+  this.rowDiv_ = this.createRowContainer_();
   this.htmlDiv_.appendChild(this.rowDiv_);
 
   this.iconSpan_ = this.createIconSpan_();
@@ -226,6 +229,32 @@ Blockly.ToolboxCategory.prototype.createDom = function() {
   this.setExpanded(this.expanded_);
 
   return this.htmlDiv_;
+};
+
+/**
+ * Creates the container that holds the row and any sub categories.
+ * @return {!Element} The div that holds the icon and the label.
+ * @protected
+ */
+Blockly.ToolboxCategory.prototype.createContainer_ = function() {
+  var container = document.createElement('div');
+  Blockly.utils.dom.addClass(container, this.classConfig_['container']);
+  return container;
+};
+/**
+ * Creates the container for the icon and the label.
+ * @return {!Element} The div that holds the icon and the label.
+ * @protected
+ */
+Blockly.ToolboxCategory.prototype.createRowContainer_ = function() {
+  var rowDiv = document.createElement('div');
+  Blockly.utils.dom.addClass(rowDiv, this.classConfig_['row']);
+  var nestedValue = Blockly.ToolboxCategory.NestedValue * this.getLevel();
+  nestedValue = nestedValue.toString() + 'px';
+  this.workspace_.RTL ? rowDiv.style.paddingRight = nestedValue :
+      rowDiv.style.paddingLeft = nestedValue;
+  rowDiv.style.pointerEvents = 'none';
+  return rowDiv;
 };
 
 /**
@@ -269,8 +298,6 @@ Blockly.ToolboxCategory.prototype.createLabelSpan_ = function() {
 Blockly.ToolboxCategory.prototype.createSubCategories_ = function(contents) {
   var contentsContainer = document.createElement('div');
   Blockly.utils.dom.addClass(contentsContainer, this.classConfig_['contents']);
-  this.workspace_.RTL ? contentsContainer.style.paddingRight = '19px' :
-      contentsContainer.style.paddingLeft = '19px';
 
   for (var i = 0; i < contents.length; i++) {
     var newCategory = contents[i];

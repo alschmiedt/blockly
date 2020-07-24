@@ -832,10 +832,6 @@ Blockly.Css.register([
     '-webkit-tap-highlight-color: transparent;', /* issue #1345 */
   '}',
 
-  '.blocklyToolboxCategory {',
-    'padding-bottom: 3px',
-  '}',
-
   '.blocklyToolboxCategory:not(.blocklyTreeSelected):hover {',
     'background-color: rgba(255, 255, 255, 0.2);',
   '}',
@@ -861,6 +857,7 @@ Blockly.Css.register([
   '.blocklyTreeRow {',
     'height: 22px;',
     'line-height: 22px;',
+    'margin-bottom: 3px;',
     'padding-right: 8px;',
     'pointer-events: none',
     'white-space: nowrap;',

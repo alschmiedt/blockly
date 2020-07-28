@@ -610,6 +610,7 @@ Blockly.Toolbox.prototype.setVisible = function(isVisible) {
 
 /**
  * Sets the given item as selected.
+ * No-op if the item is not selectable.
  * @param {?Blockly.ToolboxItem} newItem The toolbox item to select.
  * @public
  */
@@ -620,7 +621,7 @@ Blockly.Toolbox.prototype.setSelectedItem = function(newItem) {
     return;
   }
   newItem = /** @type {Blockly.SelectableToolboxItem} */ (newItem);
-  // Do not deselect if the oldItem has children and has been previously clicked
+  // Deselect unless the oldItem is collapsible and has been previously clicked
   // on.
   if (oldItem && (!oldItem.isCollapsible() || oldItem != newItem)) {
     this.selectedItem_ = null;
@@ -637,11 +638,11 @@ Blockly.Toolbox.prototype.setSelectedItem = function(newItem) {
   }
 
   this.updateFlyout_(oldItem, newItem);
-  this.fireEvent_(oldItem, newItem);
+  this.fireSelectEvent_(oldItem, newItem);
 };
 
 /**
- * Selects the toolbox item by it's position in the list of toolbox items.
+ * Selects the toolbox item by its position in the list of toolbox items.
  * @param {number} position The position of the item to select.
  * @public
  */
@@ -678,7 +679,7 @@ Blockly.Toolbox.prototype.updateFlyout_ = function(oldItem, newItem) {
  *     item.
  * @private
  */
-Blockly.Toolbox.prototype.fireEvent_ = function(oldItem, newItem) {
+Blockly.Toolbox.prototype.fireSelectEvent_ = function(oldItem, newItem) {
   var oldElement = oldItem && oldItem.getName();
   var newElement = newItem && newItem.getName();
   // In this case the toolbox closes, so the newElement should be null.

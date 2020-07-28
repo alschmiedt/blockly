@@ -512,6 +512,16 @@ Blockly.Toolbox.prototype.getWorkspace = function() {
 };
 
 /**
+ * Gets the selected item.
+ * @return {?Blockly.ToolboxItem} The selected item, or null if no item is
+ *     currently selected.
+ * @public
+ */
+Blockly.Toolbox.prototype.getSelectedItem = function() {
+  return this.selectedItem_;
+};
+
+/**
  * Gets whether or not the toolbox is horizontal.
  * @return {boolean} True if the toolbox is horizontal, false if the toolbox is
  *     vertical.
@@ -795,16 +805,6 @@ Blockly.Toolbox.prototype.selectPrevious_ = function() {
     }
   }
   return false;
-};
-
-/**
- * Gets the selected item.
- * @return {?Blockly.ToolboxItem} The selected item, or null if no item is
- *     currently selected.
- * @public
- */
-Blockly.Toolbox.prototype.getSelectedItem = function() {
-  return this.selectedItem_;
 };
 
 /**

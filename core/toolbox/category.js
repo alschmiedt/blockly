@@ -160,9 +160,8 @@ Blockly.ToolboxCategory.ClassConfig;
 /**
  * The number of pixels to move the category over at each nested level.
  * @type {number}
- * @const {number}
  */
-Blockly.ToolboxCategory.NESTED_PADDING = 19;
+Blockly.ToolboxCategory.nestedPadding = 19;
 
 /**
  * Parses the contents array depending on if the category has children, is a
@@ -251,7 +250,7 @@ Blockly.ToolboxCategory.prototype.createContainer_ = function() {
 Blockly.ToolboxCategory.prototype.createRowContainer_ = function() {
   var rowDiv = document.createElement('div');
   Blockly.utils.dom.addClass(rowDiv, this.classConfig_['row']);
-  var nestedPadding = Blockly.ToolboxCategory.NESTED_PADDING * this.getLevel();
+  var nestedPadding = Blockly.ToolboxCategory.nestedPadding * this.getLevel();
   nestedPadding = nestedPadding.toString() + 'px';
   this.workspace_.RTL ? rowDiv.style.paddingRight = nestedPadding :
       rowDiv.style.paddingLeft = nestedPadding;

@@ -251,10 +251,10 @@ Blockly.ToolboxCategory.prototype.createContainer_ = function() {
 Blockly.ToolboxCategory.prototype.createRowContainer_ = function() {
   var rowDiv = document.createElement('div');
   Blockly.utils.dom.addClass(rowDiv, this.classConfig_['row']);
-  var nestedValue = Blockly.ToolboxCategory.NestedValue * this.getLevel();
-  nestedValue = nestedValue.toString() + 'px';
-  this.workspace_.RTL ? rowDiv.style.paddingRight = nestedValue :
-      rowDiv.style.paddingLeft = nestedValue;
+  var nestedPadding = Blockly.ToolboxCategory.NESTED_PADDING * this.getLevel();
+  nestedPadding = nestedPadding.toString() + 'px';
+  this.workspace_.RTL ? rowDiv.style.paddingRight = nestedPadding :
+      rowDiv.style.paddingLeft = nestedPadding;
   rowDiv.style.pointerEvents = 'none';
   return rowDiv;
 };

@@ -69,6 +69,7 @@ Blockly.utils.toolbox.Label;
  *            colour:?string,
  *            contents:!Array.<Blockly.utils.toolbox.ToolboxItemDef>,
  *            classConfig:?Blockly.ToolboxCategory.ClassConfig
+ *            custom:?string,
  *          }}
  */
 Blockly.utils.toolbox.Category;

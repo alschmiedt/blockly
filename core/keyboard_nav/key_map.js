@@ -37,6 +37,33 @@ Blockly.user.keyMap.modifierKeys = {
   META: 'Meta'
 };
 
+Blockly.user.keyMap.register = function(keyCode, action) {
+  var oldAction = Blockly.user.keyMap.getActionByKeyCode(keyCode);
+  if (oldAction) {
+    return false;
+  }
+  Blockly.user.keyMap.map_[keyCode] = action;
+};
+
+Blockly.user.keyMap.unregister = function(action) {
+  var keys = Object.keys(Blockly.user.keyMap.map_);
+  for (var i = 0, key; (key = keys[i]); i++) {
+    if (Blockly.user.keyMap.map_[key].id === action.id) {
+      delete Blockly.user.keyMap.map_[key];
+    }
+  }
+};
+
+Blockly.user.keyMap.onKeyDown = function(e, workspace) {
+  var keyCode = Blockly.user.keyMap.serializeKeyEvent(e);
+  var action = Blockly.user.keyMap.getActionByKeyCode(keyCode);
+
+  if (!action || workspace.readOnly && !action.readOnly) {
+    return false;
+  }
+  return action.callback(workspace);
+};
+
 /**
  * Update the key map to contain the new action.
  * @param {string} keyCode The key code serialized by the serializeKeyEvent.
@@ -157,34 +184,34 @@ Blockly.user.keyMap.createSerializedKey = function(keyCode, modifiers) {
  * @return {!Object<string,Blockly.Action>} An object holding the default key
  *     to action mapping.
  */
-Blockly.user.keyMap.createDefaultKeyMap = function() {
-  var map = {};
-  var controlK = Blockly.user.keyMap.createSerializedKey(
-      Blockly.utils.KeyCodes.K, [Blockly.user.keyMap.modifierKeys.CONTROL,
-        Blockly.user.keyMap.modifierKeys.SHIFT]);
-  var shiftW = Blockly.user.keyMap.createSerializedKey(
-      Blockly.utils.KeyCodes.W, [Blockly.user.keyMap.modifierKeys.SHIFT]);
-  var shiftA = Blockly.user.keyMap.createSerializedKey(
-      Blockly.utils.KeyCodes.A, [Blockly.user.keyMap.modifierKeys.SHIFT]);
-  var shiftS = Blockly.user.keyMap.createSerializedKey(
-      Blockly.utils.KeyCodes.S, [Blockly.user.keyMap.modifierKeys.SHIFT]);
-  var shiftD = Blockly.user.keyMap.createSerializedKey(
-      Blockly.utils.KeyCodes.D, [Blockly.user.keyMap.modifierKeys.SHIFT]);
+// Blockly.user.keyMap.createDefaultKeyMap = function() {
+//   var map = {};
+//   var controlK = Blockly.user.keyMap.createSerializedKey(
+//       Blockly.utils.KeyCodes.K, [Blockly.user.keyMap.modifierKeys.CONTROL,
+//         Blockly.user.keyMap.modifierKeys.SHIFT]);
+//   var shiftW = Blockly.user.keyMap.createSerializedKey(
+//       Blockly.utils.KeyCodes.W, [Blockly.user.keyMap.modifierKeys.SHIFT]);
+//   var shiftA = Blockly.user.keyMap.createSerializedKey(
+//       Blockly.utils.KeyCodes.A, [Blockly.user.keyMap.modifierKeys.SHIFT]);
+//   var shiftS = Blockly.user.keyMap.createSerializedKey(
+//       Blockly.utils.KeyCodes.S, [Blockly.user.keyMap.modifierKeys.SHIFT]);
+//   var shiftD = Blockly.user.keyMap.createSerializedKey(
+//       Blockly.utils.KeyCodes.D, [Blockly.user.keyMap.modifierKeys.SHIFT]);
 
-  map[Blockly.utils.KeyCodes.W] = Blockly.navigation.ACTION_PREVIOUS;
-  map[Blockly.utils.KeyCodes.A] = Blockly.navigation.ACTION_OUT;
-  map[Blockly.utils.KeyCodes.S] = Blockly.navigation.ACTION_NEXT;
-  map[Blockly.utils.KeyCodes.D] = Blockly.navigation.ACTION_IN;
-  map[Blockly.utils.KeyCodes.I] = Blockly.navigation.ACTION_INSERT;
-  map[Blockly.utils.KeyCodes.ENTER] = Blockly.navigation.ACTION_MARK;
-  map[Blockly.utils.KeyCodes.X] = Blockly.navigation.ACTION_DISCONNECT;
-  map[Blockly.utils.KeyCodes.T] = Blockly.navigation.ACTION_TOOLBOX;
-  map[Blockly.utils.KeyCodes.E] = Blockly.navigation.ACTION_EXIT;
-  map[Blockly.utils.KeyCodes.ESC] = Blockly.navigation.ACTION_EXIT;
-  map[controlK] = Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV;
-  map[shiftW] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_UP;
-  map[shiftA] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_LEFT;
-  map[shiftS] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_DOWN;
-  map[shiftD] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_RIGHT;
-  return map;
-};
+//   map[Blockly.utils.KeyCodes.W] = Blockly.navigation.ACTION_PREVIOUS;
+//   map[Blockly.utils.KeyCodes.A] = Blockly.navigation.ACTION_OUT;
+//   map[Blockly.utils.KeyCodes.S] = Blockly.navigation.ACTION_NEXT;
+//   map[Blockly.utils.KeyCodes.D] = Blockly.navigation.ACTION_IN;
+//   map[Blockly.utils.KeyCodes.I] = Blockly.navigation.ACTION_INSERT;
+//   map[Blockly.utils.KeyCodes.ENTER] = Blockly.navigation.ACTION_MARK;
+//   map[Blockly.utils.KeyCodes.X] = Blockly.navigation.ACTION_DISCONNECT;
+//   map[Blockly.utils.KeyCodes.T] = Blockly.navigation.ACTION_TOOLBOX;
+//   map[Blockly.utils.KeyCodes.E] = Blockly.navigation.ACTION_EXIT;
+//   map[Blockly.utils.KeyCodes.ESC] = Blockly.navigation.ACTION_EXIT;
+//   map[controlK] = Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV;
+//   map[shiftW] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_UP;
+//   map[shiftA] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_LEFT;
+//   map[shiftS] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_DOWN;
+//   map[shiftD] = Blockly.navigation.ACTION_MOVE_WS_CURSOR_RIGHT;
+//   return map;
+// };

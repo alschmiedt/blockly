@@ -108,7 +108,7 @@ Blockly.Options = function(options) {
   } else {
     var oneBasedIndex = !!options['oneBasedIndex'];
   }
-  var keyMap = options['keyMap'] || Blockly.user.keyMap.createDefaultKeyMap();
+  // var keyMap = options['keyMap'] || Blockly.user.keyMap.createDefaultKeyMap();
 
   var renderer = options['renderer'] || 'geras';
 
@@ -159,7 +159,7 @@ Blockly.Options = function(options) {
   /** @type {!Blockly.Theme} */
   this.theme = Blockly.Options.parseThemeOptions_(options);
   /** @type {!Object<string,Blockly.Action>} */
-  this.keyMap = keyMap;
+  // this.keyMap = keyMap;
   /** @type {string} */
   this.renderer = renderer;
   /** @type {?Object} */

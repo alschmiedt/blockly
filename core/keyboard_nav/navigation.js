@@ -685,8 +685,7 @@ Blockly.navigation.moveCursorOnBlockMutation = function(mutatedBlock) {
 /**
  * Enable accessibility mode.
  */
-Blockly.navigation.enableKeyboardAccessibility = function() {
-  var workspace = Blockly.navigation.getNavigationWorkspace();
+Blockly.navigation.enableKeyboardAccessibility = function(workspace) {
   if (!workspace.keyboardAccessibilityMode) {
     workspace.keyboardAccessibilityMode = true;
     Blockly.navigation.focusWorkspace_();
@@ -966,119 +965,158 @@ Blockly.navigation.handleEnterForWS_ = function() {
  * The previous action.
  * @type {!Blockly.Action}
  */
-Blockly.navigation.ACTION_PREVIOUS = new Blockly.Action(
-    Blockly.navigation.actionNames.PREVIOUS, 'Go to the previous location.');
+// TODO: Go back to readonly
 
-/**
- * The out action.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_OUT = new Blockly.Action(
-    Blockly.navigation.actionNames.OUT,
-    'Go to the parent of the current location.');
+Blockly.navigation.ACTION_PREVIOUS = {
+  id: Blockly.navigation.actionNames.PREVIOUS,
+  displayText: '',
+  readOnly: false,
+  callback: function(workspace) {
+    if (workspace.keyboardAccessibilityMode) {
+      switch (Blockly.navigation.currentState_) {
+        case Blockly.navigation.STATE_WS:
+          var workspace = Blockly.navigation.getNavigationWorkspace();
+          if (workspace.getCursor().onBlocklyAction(Blockly.navigation.ACTION_PREVIOUS)) {
+            return true;
+          }
+          console.log("WORKSPACE");
+          return true;
+        case Blockly.navigation.STATE_TOOLBOX:
+          console.log("TOOLBOX");
+          return true;
+        case Blockly.navigation.STATE_FLYOUT:
+          console.log("FLYOUT");
+          return true;
+        default:
+          return false;
+      }
+    }
+  }
+};
 
-/**
- * The next action.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_NEXT = new Blockly.Action(
-    Blockly.navigation.actionNames.NEXT, 'Go to the next location.');
+Blockly.user.keyMap.register(Blockly.utils.KeyCodes.W, Blockly.navigation.ACTION_PREVIOUS);
 
-/**
- * The in action.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_IN = new Blockly.Action(
-    Blockly.navigation.actionNames.IN,
-    'Go to the first child of the current location.');
+Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV = {
+  id: 'action_toggle',
+  displayText: '',
+  readOnly: false,
+  callback: Blockly.navigation.enableKeyboardAccessibility
+};
 
-/**
- * The action to try to insert a block.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_INSERT = new Blockly.Action(
-    Blockly.navigation.actionNames.INSERT,
-    'Connect the current location to the marked location.');
+var controlK = Blockly.user.keyMap.createSerializedKey(
+    Blockly.utils.KeyCodes.K, [Blockly.user.keyMap.modifierKeys.CONTROL,
+      Blockly.user.keyMap.modifierKeys.SHIFT]);
+Blockly.user.keyMap.register(controlK, Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV);
+// /**
+//  * The out action.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_OUT = new Blockly.Action(
+//     Blockly.navigation.actionNames.OUT,
+//     'Go to the parent of the current location.');
 
-/**
- * The action to mark a certain location.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_MARK = new Blockly.Action(
-    Blockly.navigation.actionNames.MARK, 'Mark the current location.');
+// /**
+//  * The next action.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_NEXT = new Blockly.Action(
+//     Blockly.navigation.actionNames.NEXT, 'Go to the next location.');
 
-/**
- * The action to disconnect a block.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_DISCONNECT = new Blockly.Action(
-    Blockly.navigation.actionNames.DISCONNECT,
-    'Disconnect the block at the current location from its parent.');
+// /**
+//  * The in action.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_IN = new Blockly.Action(
+//     Blockly.navigation.actionNames.IN,
+//     'Go to the first child of the current location.');
 
-/**
- * The action to open the toolbox.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_TOOLBOX = new Blockly.Action(
-    Blockly.navigation.actionNames.TOOLBOX, 'Open the toolbox.');
+// /**
+//  * The action to try to insert a block.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_INSERT = new Blockly.Action(
+//     Blockly.navigation.actionNames.INSERT,
+//     'Connect the current location to the marked location.');
 
-/**
- * The action to exit the toolbox or flyout.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_EXIT = new Blockly.Action(
-    Blockly.navigation.actionNames.EXIT,
-    'Close the current modal, such as a toolbox or field editor.');
+// /**
+//  * The action to mark a certain location.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_MARK = new Blockly.Action(
+//     Blockly.navigation.actionNames.MARK, 'Mark the current location.');
 
-/**
- * The action to toggle keyboard navigation mode on and off.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV = new Blockly.Action(
-    Blockly.navigation.actionNames.TOGGLE_KEYBOARD_NAV,
-    'Turns on and off keyboard navigation.');
+// /**
+//  * The action to disconnect a block.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_DISCONNECT = new Blockly.Action(
+//     Blockly.navigation.actionNames.DISCONNECT,
+//     'Disconnect the block at the current location from its parent.');
 
-/**
- * The action to move the cursor to the left on a workspace.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_MOVE_WS_CURSOR_LEFT = new Blockly.Action(
-    Blockly.navigation.actionNames.MOVE_WS_CURSOR_LEFT,
-    'Move the workspace cursor to the lefts.');
+// /**
+//  * The action to open the toolbox.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_TOOLBOX = new Blockly.Action(
+//     Blockly.navigation.actionNames.TOOLBOX, 'Open the toolbox.');
 
-/**
- * The action to move the cursor to the right on a workspace.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_MOVE_WS_CURSOR_RIGHT = new Blockly.Action(
-    Blockly.navigation.actionNames.MOVE_WS_CURSOR_RIGHT,
-    'Move the workspace cursor to the right.');
+// /**
+//  * The action to exit the toolbox or flyout.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_EXIT = new Blockly.Action(
+//     Blockly.navigation.actionNames.EXIT,
+//     'Close the current modal, such as a toolbox or field editor.');
 
-/**
- * The action to move the cursor up on a workspace.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_MOVE_WS_CURSOR_UP = new Blockly.Action(
-    Blockly.navigation.actionNames.MOVE_WS_CURSOR_UP,
-    'Move the workspace cursor up.');
+// /**
+//  * The action to toggle keyboard navigation mode on and off.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV = new Blockly.Action(
+//     Blockly.navigation.actionNames.TOGGLE_KEYBOARD_NAV,
+//     'Turns on and off keyboard navigation.');
 
-/**
- * The action to move the cursor down on a workspace.
- * @type {!Blockly.Action}
- */
-Blockly.navigation.ACTION_MOVE_WS_CURSOR_DOWN = new Blockly.Action(
-    Blockly.navigation.actionNames.MOVE_WS_CURSOR_DOWN,
-    'Move the workspace cursor down.');
+// /**
+//  * The action to move the cursor to the left on a workspace.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_MOVE_WS_CURSOR_LEFT = new Blockly.Action(
+//     Blockly.navigation.actionNames.MOVE_WS_CURSOR_LEFT,
+//     'Move the workspace cursor to the lefts.');
+
+// /**
+//  * The action to move the cursor to the right on a workspace.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_MOVE_WS_CURSOR_RIGHT = new Blockly.Action(
+//     Blockly.navigation.actionNames.MOVE_WS_CURSOR_RIGHT,
+//     'Move the workspace cursor to the right.');
+
+// /**
+//  * The action to move the cursor up on a workspace.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_MOVE_WS_CURSOR_UP = new Blockly.Action(
+//     Blockly.navigation.actionNames.MOVE_WS_CURSOR_UP,
+//     'Move the workspace cursor up.');
+
+// /**
+//  * The action to move the cursor down on a workspace.
+//  * @type {!Blockly.Action}
+//  */
+// Blockly.navigation.ACTION_MOVE_WS_CURSOR_DOWN = new Blockly.Action(
+//     Blockly.navigation.actionNames.MOVE_WS_CURSOR_DOWN,
+//     'Move the workspace cursor down.');
 
 
-/**
- * List of actions that can be performed in read only mode.
- * @type {!Array.<!Blockly.Action>}
- */
-Blockly.navigation.READONLY_ACTION_LIST = [
-  Blockly.navigation.ACTION_PREVIOUS,
-  Blockly.navigation.ACTION_OUT,
-  Blockly.navigation.ACTION_IN,
-  Blockly.navigation.ACTION_NEXT,
-  Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV
-];
+// /**
+//  * List of actions that can be performed in read only mode.
+//  * @type {!Array.<!Blockly.Action>}
+//  */
+// Blockly.navigation.READONLY_ACTION_LIST = [
+//   Blockly.navigation.ACTION_PREVIOUS,
+//   Blockly.navigation.ACTION_OUT,
+//   Blockly.navigation.ACTION_IN,
+//   Blockly.navigation.ACTION_NEXT,
+//   Blockly.navigation.ACTION_TOGGLE_KEYBOARD_NAV
+// ];

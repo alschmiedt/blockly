@@ -151,7 +151,7 @@ Blockly.Cursor.prototype.onBlocklyAction = function(action) {
           .onBlocklyAction(action)) {
     return true;
   }
-  switch (action.name) {
+  switch (action.id) {
     case Blockly.navigation.actionNames.PREVIOUS:
       this.prev();
       return true;

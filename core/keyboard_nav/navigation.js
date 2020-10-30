@@ -60,6 +60,8 @@ Blockly.navigation.STATE_TOOLBOX = 3;
  */
 Blockly.navigation.WS_MOVE_DISTANCE = 40;
 
+Blockly.navigation.flyoutButton = null;
+
 /**
  * The current state the user is in.
  * Initialized to workspace state since a user enters navigation mode by shift
@@ -162,7 +164,12 @@ Blockly.navigation.focusFlyout_ = function() {
 
   if (flyout && flyout.getWorkspace()) {
     var topBlocks = flyout.getWorkspace().getTopBlocks(true);
-    if (topBlocks.length > 0) {
+    var buttons = flyout.buttons_;
+    if (buttons.length > 0) {
+      var button = buttons[0];
+      button.svgGroup_.style.fill = 'green';
+      Blockly.navigation.flyoutButton = button;
+    } else if (topBlocks.length > 0) {
       topBlock = topBlocks[0];
       var astNode = Blockly.ASTNode.createStackNode(topBlock);
       Blockly.navigation.getFlyoutCursor_().setCurNode(astNode);
@@ -259,11 +266,20 @@ Blockly.navigation.insertFromFlyout = function() {
  * @private
  */
 Blockly.navigation.resetFlyout_ = function(shouldHide) {
+  var workspace = Blockly.navigation.getNavigationWorkspace();
+  var flyout = workspace.getFlyout();
+  var buttons = flyout.buttons_;
   if (Blockly.navigation.getFlyoutCursor_()) {
     Blockly.navigation.getFlyoutCursor_().hide();
     if (shouldHide) {
-      Blockly.navigation.getNavigationWorkspace().getFlyout().hide();
+      workspace.getFlyout().hide();
     }
+  }
+
+  if (buttons.length > 0) {
+    var button = buttons[0];
+    button.svgGroup_.style.fill = '';
+    Blockly.navigation.flyoutButton = null;
   }
 };
 
@@ -834,6 +850,28 @@ Blockly.navigation.flyoutOnAction_ = function(action) {
   var workspace = Blockly.navigation.getNavigationWorkspace();
   var toolbox = workspace.getToolbox();
   var flyout = toolbox ? toolbox.getFlyout() : workspace.getFlyout();
+  var topBlocks = flyout.getWorkspace().getTopBlocks(true);
+
+  if (Blockly.navigation.flyoutButton && action.name == Blockly.navigation.actionNames.NEXT) {
+    if (topBlocks.length > 0) {
+      var topBlock = topBlocks[0];
+      var astNode = Blockly.ASTNode.createStackNode(topBlock);
+      Blockly.navigation.getFlyoutCursor_().setCurNode(astNode);
+      Blockly.navigation.flyoutButton.svgGroup_.style.fill = '';
+      Blockly.navigation.flyoutButton = null;
+    }
+    return;
+  }
+
+  if (action.name === Blockly.navigation.actionNames.PREVIOUS) {
+    var flyoutCursor = Blockly.navigation.getFlyoutCursor_();
+    var curLocation = flyoutCursor.getCurNode().getLocation();
+    if (curLocation === topBlocks[0] && flyout.buttons_.length > 0) {
+      Blockly.navigation.flyoutButton = flyout.buttons_[0];
+      Blockly.navigation.flyoutButton.svgGroup_.style.fill = 'green';
+      flyoutCursor.hide();
+    }
+  }
 
   if (flyout && flyout.onBlocklyAction(action)) {
     return true;
@@ -844,7 +882,19 @@ Blockly.navigation.flyoutOnAction_ = function(action) {
       Blockly.navigation.focusToolbox_();
       return true;
     case Blockly.navigation.actionNames.MARK:
-      Blockly.navigation.insertFromFlyout();
+      if (Blockly.navigation.flyoutButton) {
+        var button = flyout.buttons_[0];
+        (function() {
+          flyout.targetWorkspace.getButtonCallback(button.callbackKey_)(button);
+          var topBlocks = flyout.getWorkspace().getTopBlocks(true);
+          var astNode = Blockly.ASTNode.createStackNode(topBlocks[0]);
+          Blockly.navigation.getFlyoutCursor_().setCurNode(astNode);
+          Blockly.navigation.flyoutButton.svgGroup_.style.fill = '';
+          Blockly.navigation.flyoutButton = null;
+        })();
+      } else {
+        Blockly.navigation.insertFromFlyout();
+      }
       return true;
     case Blockly.navigation.actionNames.EXIT:
       Blockly.navigation.focusWorkspace_();

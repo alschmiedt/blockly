@@ -60,6 +60,11 @@ Blockly.navigation.STATE_TOOLBOX = 3;
  */
 Blockly.navigation.WS_MOVE_DISTANCE = 40;
 
+/**
+ * The flyout button the cursor is currently on.
+ * Null if the cursor is not on a flyout button.
+ * @type {?Blockly.FlyoutButton}
+ */
 Blockly.navigation.flyoutButton = null;
 
 /**
@@ -266,19 +271,15 @@ Blockly.navigation.insertFromFlyout = function() {
  * @private
  */
 Blockly.navigation.resetFlyout_ = function(shouldHide) {
-  var workspace = Blockly.navigation.getNavigationWorkspace();
-  var flyout = workspace.getFlyout();
-  var buttons = flyout.buttons_;
   if (Blockly.navigation.getFlyoutCursor_()) {
     Blockly.navigation.getFlyoutCursor_().hide();
     if (shouldHide) {
-      workspace.getFlyout().hide();
+      Blockly.navigation.getNavigationWorkspace().getFlyout().hide();
     }
   }
 
-  if (buttons.length > 0) {
-    var button = buttons[0];
-    button.svgGroup_.style.fill = '';
+  if (Blockly.navigation.flyoutButton) {
+    Blockly.navigation.flyoutButton.svgGroup_.style.fill = '';
     Blockly.navigation.flyoutButton = null;
   }
 };
@@ -857,6 +858,7 @@ Blockly.navigation.flyoutOnAction_ = function(action) {
       var topBlock = topBlocks[0];
       var astNode = Blockly.ASTNode.createStackNode(topBlock);
       Blockly.navigation.getFlyoutCursor_().setCurNode(astNode);
+      // Remove the fill color when we navigate off of the flyout button.
       Blockly.navigation.flyoutButton.svgGroup_.style.fill = '';
       Blockly.navigation.flyoutButton = null;
     }
@@ -866,8 +868,10 @@ Blockly.navigation.flyoutOnAction_ = function(action) {
   if (action.name === Blockly.navigation.actionNames.PREVIOUS) {
     var flyoutCursor = Blockly.navigation.getFlyoutCursor_();
     var curLocation = flyoutCursor.getCurNode().getLocation();
+    // When we are on the first block in the flyout and there are buttons, navigate to the button.
     if (curLocation === topBlocks[0] && flyout.buttons_.length > 0) {
       Blockly.navigation.flyoutButton = flyout.buttons_[0];
+      // Add a fill color when we have moved to the flyout button.
       Blockly.navigation.flyoutButton.svgGroup_.style.fill = 'green';
       flyoutCursor.hide();
     }
@@ -884,14 +888,13 @@ Blockly.navigation.flyoutOnAction_ = function(action) {
     case Blockly.navigation.actionNames.MARK:
       if (Blockly.navigation.flyoutButton) {
         var button = flyout.buttons_[0];
-        (function() {
-          flyout.targetWorkspace.getButtonCallback(button.callbackKey_)(button);
-          var topBlocks = flyout.getWorkspace().getTopBlocks(true);
+        flyout.targetWorkspace.getButtonCallback(button.callbackKey_)(button);
+        var topBlocks = flyout.getWorkspace().getTopBlocks(true);
+        if (topBlocks.length > 0) {
           var astNode = Blockly.ASTNode.createStackNode(topBlocks[0]);
           Blockly.navigation.getFlyoutCursor_().setCurNode(astNode);
-          Blockly.navigation.flyoutButton.svgGroup_.style.fill = '';
           Blockly.navigation.flyoutButton = null;
-        })();
+        }
       } else {
         Blockly.navigation.insertFromFlyout();
       }

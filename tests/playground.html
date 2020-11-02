@@ -282,8 +282,26 @@ function configureContextMenu(menuOptions, e) {
   menuOptions.push(Blockly.ContextMenu.workspaceCommentOption(workspace, e));
 }
 
+var blockId = null;
 function logger(e) {
-  console.log(e);
+  if (e.element === 'cursorMove') {
+    if (e.newValue) {
+      var newAST = e.newValue;
+      var newBlock = newAST.getSourceBlock();
+      // If the cursor is on the block level of the newly inserted block do not process the event.
+      if (newBlock && newBlock.id === blockId && newAST.getType() === Blockly.ASTNode.types.BLOCK) {
+      } else {
+        console.log(e);
+      }
+    }
+    blockId = null;
+  } else if (e.element === 'markerMove') {
+    console.log(e);
+  } else if (e.type === 'create') {
+    blockId = e.blockId;
+  } else if (e.type === 'move') {
+    console.log(e);
+  }
 }
 
 function airstrike(n) {

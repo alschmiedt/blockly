@@ -13935,6 +13935,602 @@ declare module Blockly.Events {
 
 declare module Blockly {
 
+    class ASTNode extends ASTNode__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class ASTNode__Class  { 
+    
+            /**
+             * Class for an AST node.
+             * It is recommended that you use one of the createNode methods instead of
+             * creating a node directly.
+             * @param {string} type The type of the location.
+             *     Must be in Blockly.ASTNode.types.
+             * @param {!Blockly.IASTNodeLocation} location The position in the AST.
+             * @param {!Blockly.ASTNode.Params=} opt_params Optional dictionary of options.
+             * @constructor
+             */
+            constructor(type: string, location: Blockly.IASTNodeLocation, opt_params?: Blockly.ASTNode.Params);
+    
+            /**
+             * Gets the value pointed to by this node.
+             * It is the callers responsibility to check the node type to figure out what
+             * type of object they get back from this.
+             * @return {!Blockly.IASTNodeLocation} The current field, connection, workspace, or
+             *     block the cursor is on.
+             */
+            getLocation(): Blockly.IASTNodeLocation;
+    
+            /**
+             * The type of the current location.
+             * One of Blockly.ASTNode.types
+             * @return {string} The type of the location.
+             */
+            getType(): string;
+    
+            /**
+             * The coordinate on the workspace.
+             * @return {Blockly.utils.Coordinate} The workspace coordinate or null if the
+             *     location is not a workspace.
+             */
+            getWsCoordinate(): Blockly.utils.Coordinate;
+    
+            /**
+             * Whether the node points to a connection.
+             * @return {boolean} [description]
+             * @package
+             */
+            isConnection(): boolean;
+    
+            /**
+             * Finds the source block of the location of this node.
+             * @return {Blockly.Block} The source block of the location, or null if the node
+             * is of type workspace.
+             */
+            getSourceBlock(): Blockly.Block;
+    
+            /**
+             * Find the element to the right of the current element in the AST.
+             * @return {Blockly.ASTNode} An AST node that wraps the next field, connection,
+             *     block, or workspace. Or null if there is no node to the right.
+             */
+            next(): Blockly.ASTNode;
+    
+            /**
+             * Find the element one level below and all the way to the left of the current
+             * location.
+             * @return {Blockly.ASTNode} An AST node that wraps the next field, connection,
+             * workspace, or block. Or null if there is nothing below this node.
+             */
+            in(): Blockly.ASTNode;
+    
+            /**
+             * Find the element to the left of the current element in the AST.
+             * @return {Blockly.ASTNode} An AST node that wraps the previous field,
+             * connection, workspace or block. Or null if no node exists to the left.
+             * null.
+             */
+            prev(): Blockly.ASTNode;
+    
+            /**
+             * Find the next element that is one position above and all the way to the left
+             * of the current location.
+             * @return {Blockly.ASTNode} An AST node that wraps the next field, connection,
+             *     workspace or block. Or null if we are at the workspace level.
+             */
+            out(): Blockly.ASTNode;
+    } 
+    
+}
+
+declare module Blockly.ASTNode {
+
+    /**
+     * @typedef {{
+     *     wsCoordinate: Blockly.utils.Coordinate
+     * }}
+     */
+    interface Params {
+        wsCoordinate: Blockly.utils.Coordinate
+    }
+
+    /**
+     * Object holding different types for an AST node.
+     * @enum {string}
+     */
+    enum types { FIELD, BLOCK, INPUT, OUTPUT, NEXT, PREVIOUS, STACK, WORKSPACE } 
+
+    /**
+     * True to navigate to all fields. False to only navigate to clickable fields.
+     * @type {boolean}
+     */
+    var NAVIGATE_ALL_FIELDS: boolean;
+
+    /**
+     * Create an AST node pointing to a field.
+     * @param {Blockly.Field} field The location of the AST node.
+     * @return {Blockly.ASTNode} An AST node pointing to a field.
+     */
+    function createFieldNode(field: Blockly.Field): Blockly.ASTNode;
+
+    /**
+     * Creates an AST node pointing to a connection. If the connection has a parent
+     * input then create an AST node of type input that will hold the connection.
+     * @param {Blockly.Connection} connection This is the connection the node will
+     *     point to.
+     * @return {Blockly.ASTNode} An AST node pointing to a connection.
+     */
+    function createConnectionNode(connection: Blockly.Connection): Blockly.ASTNode;
+
+    /**
+     * Creates an AST node pointing to an input. Stores the input connection as the
+     *     location.
+     * @param {Blockly.Input} input The input used to create an AST node.
+     * @return {Blockly.ASTNode} An AST node pointing to a input.
+     */
+    function createInputNode(input: Blockly.Input): Blockly.ASTNode;
+
+    /**
+     * Creates an AST node pointing to a block.
+     * @param {Blockly.Block} block The block used to create an AST node.
+     * @return {Blockly.ASTNode} An AST node pointing to a block.
+     */
+    function createBlockNode(block: Blockly.Block): Blockly.ASTNode;
+
+    /**
+     * Create an AST node of type stack. A stack, represented by its top block, is
+     *     the set of all blocks connected to a top block, including the top block.
+     * @param {Blockly.Block} topBlock A top block has no parent and can be found
+     *     in the list returned by workspace.getTopBlocks().
+     * @return {Blockly.ASTNode} An AST node of type stack that points to the top
+     *     block on the stack.
+     */
+    function createStackNode(topBlock: Blockly.Block): Blockly.ASTNode;
+
+    /**
+     * Creates an AST node pointing to a workspace.
+     * @param {!Blockly.Workspace} workspace The workspace that we are on.
+     * @param {Blockly.utils.Coordinate} wsCoordinate The position on the workspace
+     *     for this node.
+     * @return {Blockly.ASTNode} An AST node pointing to a workspace and a position
+     *     on the workspace.
+     */
+    function createWorkspaceNode(workspace: Blockly.Workspace, wsCoordinate: Blockly.utils.Coordinate): Blockly.ASTNode;
+
+    /**
+     * Creates an AST node for the top position on a block.
+     * This is either an output connection, previous connection, or block.
+     * @param {!Blockly.Block} block The block to find the top most AST node on.
+     * @return {Blockly.ASTNode} The AST node holding the top most position on the
+     *     block.
+     */
+    function createTopNode(block: Blockly.Block): Blockly.ASTNode;
+}
+
+
+declare module Blockly {
+
+    class BasicCursor extends BasicCursor__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class BasicCursor__Class extends Blockly.Cursor__Class  { 
+    
+            /**
+             * Class for a basic cursor.
+             * This will allow the user to get to all nodes in the AST by hitting next or
+             * previous.
+             * @constructor
+             * @extends {Blockly.Cursor}
+             */
+            constructor();
+    
+            /**
+             * Uses pre order traversal to navigate the Blockly AST. This will allow
+             * a user to easily navigate the entire Blockly AST without having to go in
+             * and out levels on the tree.
+             * @param {Blockly.ASTNode} node The current position in the AST.
+             * @param {!function(Blockly.ASTNode) : boolean} isValid A function true/false
+             *     depending on whether the given node should be traversed.
+             * @return {Blockly.ASTNode} The next node in the traversal.
+             * @protected
+             */
+            getNextNode_(node: Blockly.ASTNode, isValid: { (_0: Blockly.ASTNode): boolean }): Blockly.ASTNode;
+    
+            /**
+             * Reverses the pre order traversal in order to find the previous node. This will
+             * allow a user to easily navigate the entire Blockly AST without having to go in
+             * and out levels on the tree.
+             * @param {Blockly.ASTNode} node The current position in the AST.
+             * @param {!function(Blockly.ASTNode) : boolean} isValid A function true/false
+             *     depending on whether the given node should be traversed.
+             * @return {Blockly.ASTNode} The previous node in the traversal or null if no
+             *     previous node exists.
+             * @protected
+             */
+            getPreviousNode_(node: Blockly.ASTNode, isValid: { (_0: Blockly.ASTNode): boolean }): Blockly.ASTNode;
+    
+            /**
+             * Decides what nodes to traverse and which ones to skip. Currently, it
+             * skips output, stack and workspace nodes.
+             * @param {Blockly.ASTNode} node The AST node to check whether it is valid.
+             * @return {boolean} True if the node should be visited, false otherwise.
+             * @protected
+             */
+            validNode_(node: Blockly.ASTNode): boolean;
+    } 
+    
+}
+
+
+declare module Blockly {
+
+    class Cursor extends Cursor__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Cursor__Class extends Blockly.Marker__Class implements Blockly.IBlocklyActionable  { 
+    
+            /**
+             * Class for a cursor.
+             * A cursor controls how a user navigates the Blockly AST.
+             * @constructor
+             * @extends {Blockly.Marker}
+             * @implements {Blockly.IBlocklyActionable}
+             */
+            constructor();
+    
+            /**
+             * Find the next connection, field, or block.
+             * @return {Blockly.ASTNode} The next element, or null if the current node is
+             *     not set or there is no next value.
+             * @protected
+             */
+            next(): Blockly.ASTNode;
+    
+            /**
+             * Find the in connection or field.
+             * @return {Blockly.ASTNode} The in element, or null if the current node is
+             *     not set or there is no in value.
+             * @protected
+             */
+            in(): Blockly.ASTNode;
+    
+            /**
+             * Find the previous connection, field, or block.
+             * @return {Blockly.ASTNode} The previous element, or null if the current node
+             *     is not set or there is no previous value.
+             * @protected
+             */
+            prev(): Blockly.ASTNode;
+    
+            /**
+             * Find the out connection, field, or block.
+             * @return {Blockly.ASTNode} The out element, or null if the current node is
+             *     not set or there is no out value.
+             * @protected
+             */
+            out(): Blockly.ASTNode;
+    
+            /**
+             * Handles the given action.
+             * This is only triggered when keyboard navigation is enabled.
+             * @param {!Blockly.ShortcutRegistry.KeyboardShortcut} action The action to be handled.
+             * @return {boolean} True if the action has been handled, false otherwise.
+             */
+            onBlocklyAction(action: Blockly.ShortcutRegistry.KeyboardShortcut): boolean;
+    } 
+    
+}
+
+
+declare module Blockly {
+
+    class FlyoutCursor extends FlyoutCursor__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class FlyoutCursor__Class extends Blockly.Cursor__Class  { 
+    
+            /**
+             * Class for a flyout cursor.
+             * This controls how a user navigates blocks in the flyout.
+             * @constructor
+             * @extends {Blockly.Cursor}
+             */
+            constructor();
+    } 
+    
+}
+
+
+declare module Blockly {
+
+    class Marker extends Marker__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Marker__Class  { 
+    
+            /**
+             * Class for a marker.
+             * This is used in keyboard navigation to save a location in the Blockly AST.
+             * @constructor
+             */
+            constructor();
+    
+            /**
+             * The colour of the marker.
+             * @type {?string}
+             */
+            colour: string;
+    
+            /**
+             * The type of the marker.
+             * @type {string}
+             */
+            type: string;
+    
+            /**
+             * Sets the object in charge of drawing the marker.
+             * @param {Blockly.blockRendering.MarkerSvg} drawer The object in charge of
+             *     drawing the marker.
+             */
+            setDrawer(drawer: Blockly.blockRendering.MarkerSvg): void;
+    
+            /**
+             * Get the current drawer for the marker.
+             * @return {Blockly.blockRendering.MarkerSvg} The object in charge of drawing
+             *     the marker.
+             */
+            getDrawer(): Blockly.blockRendering.MarkerSvg;
+    
+            /**
+             * Gets the current location of the marker.
+             * @return {Blockly.ASTNode} The current field, connection, or block the marker
+             *     is on.
+             */
+            getCurNode(): Blockly.ASTNode;
+    
+            /**
+             * Set the location of the marker and call the update method.
+             * Setting isStack to true will only work if the newLocation is the top most
+             * output or previous connection on a stack.
+             * @param {Blockly.ASTNode} newNode The new location of the marker.
+             */
+            setCurNode(newNode: Blockly.ASTNode): void;
+    
+            /**
+             * Redraw the current marker.
+             * @package
+             */
+            draw(): void;
+    
+            /**
+             * Hide the marker SVG.
+             */
+            hide(): void;
+    
+            /**
+             * Dispose of this marker.
+             */
+            dispose(): void;
+    } 
+    
+}
+
+
+declare module Blockly.navigation {
+
+    /**
+     * A function to call to give feedback to the user about logs, warnings, and
+     * errors.  You can override this to customize feedback (e.g. warning sounds,
+     * reading out the warning text, etc).
+     * Null by default.
+     * The first argument is one of 'log', 'warn', and 'error'.
+     * The second argument is the message.
+     * @type {?function(string, string)}
+     * @public
+     */
+    var loggingCallback: { (_0: string, _1: string): any /*missing*/ };
+
+    /**
+     * State indicating focus is currently on the flyout.
+     * @type {number}
+     * @const
+     */
+    var STATE_FLYOUT: number;
+
+    /**
+     * State indicating focus is currently on the workspace.
+     * @type {number}
+     * @const
+     */
+    var STATE_WS: number;
+
+    /**
+     * State indicating focus is currently on the toolbox.
+     * @type {number}
+     * @const
+     */
+    var STATE_TOOLBOX: number;
+
+    /**
+     * The distance to move the cursor on the workspace.
+     * @type {number}
+     * @const
+     */
+    var WS_MOVE_DISTANCE: number;
+
+    /**
+     * Object holding default action names.
+     * @enum {string}
+     */
+    enum actionNames { PREVIOUS, NEXT, IN, OUT, INSERT, MARK, DISCONNECT, TOOLBOX, EXIT, TOGGLE_KEYBOARD_NAV, MOVE_WS_CURSOR_UP, MOVE_WS_CURSOR_DOWN, MOVE_WS_CURSOR_LEFT, MOVE_WS_CURSOR_RIGHT } 
+
+    /**
+     * The name of the marker reserved for internal use.
+     * @type {string}
+     * @const
+     */
+    var MARKER_NAME: string;
+
+    /**
+     * Get the local marker.
+     * @return {Blockly.Marker} The local marker for the main workspace.
+     */
+    function getMarker(): Blockly.Marker;
+
+    /**
+     * Get the workspace that is being navigated.
+     * @return {!Blockly.WorkspaceSvg} The workspace being navigated.
+     * TODO: Remove this in favor or using passed in workspaces.
+     */
+    function getNavigationWorkspace(): Blockly.WorkspaceSvg;
+
+    /**
+     * If there is a marked connection try connecting the block from the flyout to
+     * that connection. If no connection has been marked then inserting will place
+     * it on the workspace.
+     * @param {!Blockly.WorkspaceSvg} workspace The main workspace.
+     */
+    function insertFromFlyout(workspace: Blockly.WorkspaceSvg): void;
+
+    /**
+     * Tries to connect the given block to the destination connection, making an
+     * intelligent guess about which connection to use to on the moving block.
+     * @param {!Blockly.BlockSvg} block The block to move.
+     * @param {!Blockly.RenderedConnection} destConnection The connection to connect
+     *     to.
+     * @return {boolean} Whether the connection was successful.
+     */
+    function insertBlock(block: Blockly.BlockSvg, destConnection: Blockly.RenderedConnection): boolean;
+
+    /**
+     * Set the current navigation state.
+     * @param {number} newState The new navigation state.
+     * @package
+     */
+    function setState(newState: number): void;
+
+    /**
+     * Before a block is deleted move the cursor to the appropriate position.
+     * @param {!Blockly.BlockSvg} deletedBlock The block that is being deleted.
+     */
+    function moveCursorOnBlockDelete(deletedBlock: Blockly.BlockSvg): void;
+
+    /**
+     * When a block that the cursor is on is mutated move the cursor to the block
+     * level.
+     * @param {!Blockly.BlockSvg} mutatedBlock The block that is being mutated.
+     * @package
+     */
+    function moveCursorOnBlockMutation(mutatedBlock: Blockly.BlockSvg): void;
+
+    /**
+     * Enable accessibility mode.
+     */
+    function enableKeyboardAccessibility(): void;
+
+    /**
+     * Disable accessibility mode.
+     */
+    function disableKeyboardAccessibility(): void;
+
+    /**
+     * Keyboard shortcut to go to the previous location when in keyboard navigation
+     * mode.
+     */
+    function registerPrevious(): void;
+
+    /**
+     * Keyboard shortcut to go to the out location when in keyboard navigation
+     * mode.
+     */
+    function registerOut(): void;
+
+    /**
+     * Keyboard shortcut to go to the next location when in keyboard navigation
+     * mode.
+     */
+    function registerNext(): void;
+
+    /**
+     * Keyboard shortcut to go to the in location when in keyboard navigation mode.
+     */
+    function registerIn(): void;
+
+    /**
+     * Keyboard shortcut to connect a block to a marked location when in keyboard
+     * navigation mode.
+     */
+    function registerInsert(): void;
+
+    /** Keyboard shortcut to mark a location when in keyboard navigation mode. */
+    function registerMark(): void;
+
+    /**
+     * Keyboard shortcut to disconnect two blocks when in keyboard navigation mode.
+     */
+    function registerDisconnect(): void;
+
+    /**
+     * Keyboard shortcut to focus on the toolbox when in keyboard navigation mode.
+     */
+    function registerToolboxFocus(): void;
+
+    /**
+     * Keyboard shortcut to exit the current location and focus on the workspace
+     * when in keyboard navigation mode.
+     */
+    function registerExit(): void;
+
+    /** Keyboard shortcut to turn keyboard navigation on or off. */
+    function registerToggleKeyboardNav(): void;
+
+    /**
+     * Keyboard shortcut to move the cursor on the workspace to the left when in
+     * keyboard navigation mode.
+     */
+    function registerWorkspaceMoveLeft(): void;
+
+    /**
+     * Keyboard shortcut to move the cursor on the workspace to the right when in
+     * keyboard navigation mode.
+     */
+    function registerWorkspaceMoveRight(): void;
+
+    /**
+     * Keyboard shortcut to move the cursor on the workspace up when in keyboard
+     * navigation mode.
+     */
+    function registerWorkspaceMoveUp(): void;
+
+    /**
+     * Keyboard shortcut to move the cursor on the workspace down when in keyboard
+     * navigation mode.
+     */
+    function registerWorkspaceMoveDown(): void;
+
+    /**
+     * Registers all default keyboard shortcut items for keyboard navigation. This
+     * should be called once per instance of KeyboardShortcutRegistry.
+     * @package
+     */
+    function registerNavigationShortcuts(): void;
+}
+
+
+declare module Blockly {
+
+    class TabNavigateCursor extends TabNavigateCursor__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class TabNavigateCursor__Class extends Blockly.BasicCursor__Class  { 
+    
+            /**
+             * A cursor for navigating between tab navigable fields.
+             * @constructor
+             * @extends {Blockly.BasicCursor}
+             */
+            constructor();
+    } 
+    
+}
+
+
+declare module Blockly {
+
     interface IASTNodeLocation {
     }
 
@@ -14696,602 +15292,6 @@ declare module Blockly {
           */
         toggleExpanded: any /*missing*/;
     }
-}
-
-
-declare module Blockly {
-
-    class ASTNode extends ASTNode__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class ASTNode__Class  { 
-    
-            /**
-             * Class for an AST node.
-             * It is recommended that you use one of the createNode methods instead of
-             * creating a node directly.
-             * @param {string} type The type of the location.
-             *     Must be in Blockly.ASTNode.types.
-             * @param {!Blockly.IASTNodeLocation} location The position in the AST.
-             * @param {!Blockly.ASTNode.Params=} opt_params Optional dictionary of options.
-             * @constructor
-             */
-            constructor(type: string, location: Blockly.IASTNodeLocation, opt_params?: Blockly.ASTNode.Params);
-    
-            /**
-             * Gets the value pointed to by this node.
-             * It is the callers responsibility to check the node type to figure out what
-             * type of object they get back from this.
-             * @return {!Blockly.IASTNodeLocation} The current field, connection, workspace, or
-             *     block the cursor is on.
-             */
-            getLocation(): Blockly.IASTNodeLocation;
-    
-            /**
-             * The type of the current location.
-             * One of Blockly.ASTNode.types
-             * @return {string} The type of the location.
-             */
-            getType(): string;
-    
-            /**
-             * The coordinate on the workspace.
-             * @return {Blockly.utils.Coordinate} The workspace coordinate or null if the
-             *     location is not a workspace.
-             */
-            getWsCoordinate(): Blockly.utils.Coordinate;
-    
-            /**
-             * Whether the node points to a connection.
-             * @return {boolean} [description]
-             * @package
-             */
-            isConnection(): boolean;
-    
-            /**
-             * Finds the source block of the location of this node.
-             * @return {Blockly.Block} The source block of the location, or null if the node
-             * is of type workspace.
-             */
-            getSourceBlock(): Blockly.Block;
-    
-            /**
-             * Find the element to the right of the current element in the AST.
-             * @return {Blockly.ASTNode} An AST node that wraps the next field, connection,
-             *     block, or workspace. Or null if there is no node to the right.
-             */
-            next(): Blockly.ASTNode;
-    
-            /**
-             * Find the element one level below and all the way to the left of the current
-             * location.
-             * @return {Blockly.ASTNode} An AST node that wraps the next field, connection,
-             * workspace, or block. Or null if there is nothing below this node.
-             */
-            in(): Blockly.ASTNode;
-    
-            /**
-             * Find the element to the left of the current element in the AST.
-             * @return {Blockly.ASTNode} An AST node that wraps the previous field,
-             * connection, workspace or block. Or null if no node exists to the left.
-             * null.
-             */
-            prev(): Blockly.ASTNode;
-    
-            /**
-             * Find the next element that is one position above and all the way to the left
-             * of the current location.
-             * @return {Blockly.ASTNode} An AST node that wraps the next field, connection,
-             *     workspace or block. Or null if we are at the workspace level.
-             */
-            out(): Blockly.ASTNode;
-    } 
-    
-}
-
-declare module Blockly.ASTNode {
-
-    /**
-     * @typedef {{
-     *     wsCoordinate: Blockly.utils.Coordinate
-     * }}
-     */
-    interface Params {
-        wsCoordinate: Blockly.utils.Coordinate
-    }
-
-    /**
-     * Object holding different types for an AST node.
-     * @enum {string}
-     */
-    enum types { FIELD, BLOCK, INPUT, OUTPUT, NEXT, PREVIOUS, STACK, WORKSPACE } 
-
-    /**
-     * True to navigate to all fields. False to only navigate to clickable fields.
-     * @type {boolean}
-     */
-    var NAVIGATE_ALL_FIELDS: boolean;
-
-    /**
-     * Create an AST node pointing to a field.
-     * @param {Blockly.Field} field The location of the AST node.
-     * @return {Blockly.ASTNode} An AST node pointing to a field.
-     */
-    function createFieldNode(field: Blockly.Field): Blockly.ASTNode;
-
-    /**
-     * Creates an AST node pointing to a connection. If the connection has a parent
-     * input then create an AST node of type input that will hold the connection.
-     * @param {Blockly.Connection} connection This is the connection the node will
-     *     point to.
-     * @return {Blockly.ASTNode} An AST node pointing to a connection.
-     */
-    function createConnectionNode(connection: Blockly.Connection): Blockly.ASTNode;
-
-    /**
-     * Creates an AST node pointing to an input. Stores the input connection as the
-     *     location.
-     * @param {Blockly.Input} input The input used to create an AST node.
-     * @return {Blockly.ASTNode} An AST node pointing to a input.
-     */
-    function createInputNode(input: Blockly.Input): Blockly.ASTNode;
-
-    /**
-     * Creates an AST node pointing to a block.
-     * @param {Blockly.Block} block The block used to create an AST node.
-     * @return {Blockly.ASTNode} An AST node pointing to a block.
-     */
-    function createBlockNode(block: Blockly.Block): Blockly.ASTNode;
-
-    /**
-     * Create an AST node of type stack. A stack, represented by its top block, is
-     *     the set of all blocks connected to a top block, including the top block.
-     * @param {Blockly.Block} topBlock A top block has no parent and can be found
-     *     in the list returned by workspace.getTopBlocks().
-     * @return {Blockly.ASTNode} An AST node of type stack that points to the top
-     *     block on the stack.
-     */
-    function createStackNode(topBlock: Blockly.Block): Blockly.ASTNode;
-
-    /**
-     * Creates an AST node pointing to a workspace.
-     * @param {!Blockly.Workspace} workspace The workspace that we are on.
-     * @param {Blockly.utils.Coordinate} wsCoordinate The position on the workspace
-     *     for this node.
-     * @return {Blockly.ASTNode} An AST node pointing to a workspace and a position
-     *     on the workspace.
-     */
-    function createWorkspaceNode(workspace: Blockly.Workspace, wsCoordinate: Blockly.utils.Coordinate): Blockly.ASTNode;
-
-    /**
-     * Creates an AST node for the top position on a block.
-     * This is either an output connection, previous connection, or block.
-     * @param {!Blockly.Block} block The block to find the top most AST node on.
-     * @return {Blockly.ASTNode} The AST node holding the top most position on the
-     *     block.
-     */
-    function createTopNode(block: Blockly.Block): Blockly.ASTNode;
-}
-
-
-declare module Blockly {
-
-    class BasicCursor extends BasicCursor__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class BasicCursor__Class extends Blockly.Cursor__Class  { 
-    
-            /**
-             * Class for a basic cursor.
-             * This will allow the user to get to all nodes in the AST by hitting next or
-             * previous.
-             * @constructor
-             * @extends {Blockly.Cursor}
-             */
-            constructor();
-    
-            /**
-             * Uses pre order traversal to navigate the Blockly AST. This will allow
-             * a user to easily navigate the entire Blockly AST without having to go in
-             * and out levels on the tree.
-             * @param {Blockly.ASTNode} node The current position in the AST.
-             * @param {!function(Blockly.ASTNode) : boolean} isValid A function true/false
-             *     depending on whether the given node should be traversed.
-             * @return {Blockly.ASTNode} The next node in the traversal.
-             * @protected
-             */
-            getNextNode_(node: Blockly.ASTNode, isValid: { (_0: Blockly.ASTNode): boolean }): Blockly.ASTNode;
-    
-            /**
-             * Reverses the pre order traversal in order to find the previous node. This will
-             * allow a user to easily navigate the entire Blockly AST without having to go in
-             * and out levels on the tree.
-             * @param {Blockly.ASTNode} node The current position in the AST.
-             * @param {!function(Blockly.ASTNode) : boolean} isValid A function true/false
-             *     depending on whether the given node should be traversed.
-             * @return {Blockly.ASTNode} The previous node in the traversal or null if no
-             *     previous node exists.
-             * @protected
-             */
-            getPreviousNode_(node: Blockly.ASTNode, isValid: { (_0: Blockly.ASTNode): boolean }): Blockly.ASTNode;
-    
-            /**
-             * Decides what nodes to traverse and which ones to skip. Currently, it
-             * skips output, stack and workspace nodes.
-             * @param {Blockly.ASTNode} node The AST node to check whether it is valid.
-             * @return {boolean} True if the node should be visited, false otherwise.
-             * @protected
-             */
-            validNode_(node: Blockly.ASTNode): boolean;
-    } 
-    
-}
-
-
-declare module Blockly {
-
-    class Cursor extends Cursor__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Cursor__Class extends Blockly.Marker__Class implements Blockly.IBlocklyActionable  { 
-    
-            /**
-             * Class for a cursor.
-             * A cursor controls how a user navigates the Blockly AST.
-             * @constructor
-             * @extends {Blockly.Marker}
-             * @implements {Blockly.IBlocklyActionable}
-             */
-            constructor();
-    
-            /**
-             * Find the next connection, field, or block.
-             * @return {Blockly.ASTNode} The next element, or null if the current node is
-             *     not set or there is no next value.
-             * @protected
-             */
-            next(): Blockly.ASTNode;
-    
-            /**
-             * Find the in connection or field.
-             * @return {Blockly.ASTNode} The in element, or null if the current node is
-             *     not set or there is no in value.
-             * @protected
-             */
-            in(): Blockly.ASTNode;
-    
-            /**
-             * Find the previous connection, field, or block.
-             * @return {Blockly.ASTNode} The previous element, or null if the current node
-             *     is not set or there is no previous value.
-             * @protected
-             */
-            prev(): Blockly.ASTNode;
-    
-            /**
-             * Find the out connection, field, or block.
-             * @return {Blockly.ASTNode} The out element, or null if the current node is
-             *     not set or there is no out value.
-             * @protected
-             */
-            out(): Blockly.ASTNode;
-    
-            /**
-             * Handles the given action.
-             * This is only triggered when keyboard navigation is enabled.
-             * @param {!Blockly.ShortcutRegistry.KeyboardShortcut} action The action to be handled.
-             * @return {boolean} True if the action has been handled, false otherwise.
-             */
-            onBlocklyAction(action: Blockly.ShortcutRegistry.KeyboardShortcut): boolean;
-    } 
-    
-}
-
-
-declare module Blockly {
-
-    class FlyoutCursor extends FlyoutCursor__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class FlyoutCursor__Class extends Blockly.Cursor__Class  { 
-    
-            /**
-             * Class for a flyout cursor.
-             * This controls how a user navigates blocks in the flyout.
-             * @constructor
-             * @extends {Blockly.Cursor}
-             */
-            constructor();
-    } 
-    
-}
-
-
-declare module Blockly {
-
-    class Marker extends Marker__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Marker__Class  { 
-    
-            /**
-             * Class for a marker.
-             * This is used in keyboard navigation to save a location in the Blockly AST.
-             * @constructor
-             */
-            constructor();
-    
-            /**
-             * The colour of the marker.
-             * @type {?string}
-             */
-            colour: string;
-    
-            /**
-             * The type of the marker.
-             * @type {string}
-             */
-            type: string;
-    
-            /**
-             * Sets the object in charge of drawing the marker.
-             * @param {Blockly.blockRendering.MarkerSvg} drawer The object in charge of
-             *     drawing the marker.
-             */
-            setDrawer(drawer: Blockly.blockRendering.MarkerSvg): void;
-    
-            /**
-             * Get the current drawer for the marker.
-             * @return {Blockly.blockRendering.MarkerSvg} The object in charge of drawing
-             *     the marker.
-             */
-            getDrawer(): Blockly.blockRendering.MarkerSvg;
-    
-            /**
-             * Gets the current location of the marker.
-             * @return {Blockly.ASTNode} The current field, connection, or block the marker
-             *     is on.
-             */
-            getCurNode(): Blockly.ASTNode;
-    
-            /**
-             * Set the location of the marker and call the update method.
-             * Setting isStack to true will only work if the newLocation is the top most
-             * output or previous connection on a stack.
-             * @param {Blockly.ASTNode} newNode The new location of the marker.
-             */
-            setCurNode(newNode: Blockly.ASTNode): void;
-    
-            /**
-             * Redraw the current marker.
-             * @package
-             */
-            draw(): void;
-    
-            /**
-             * Hide the marker SVG.
-             */
-            hide(): void;
-    
-            /**
-             * Dispose of this marker.
-             */
-            dispose(): void;
-    } 
-    
-}
-
-
-declare module Blockly.navigation {
-
-    /**
-     * A function to call to give feedback to the user about logs, warnings, and
-     * errors.  You can override this to customize feedback (e.g. warning sounds,
-     * reading out the warning text, etc).
-     * Null by default.
-     * The first argument is one of 'log', 'warn', and 'error'.
-     * The second argument is the message.
-     * @type {?function(string, string)}
-     * @public
-     */
-    var loggingCallback: { (_0: string, _1: string): any /*missing*/ };
-
-    /**
-     * State indicating focus is currently on the flyout.
-     * @type {number}
-     * @const
-     */
-    var STATE_FLYOUT: number;
-
-    /**
-     * State indicating focus is currently on the workspace.
-     * @type {number}
-     * @const
-     */
-    var STATE_WS: number;
-
-    /**
-     * State indicating focus is currently on the toolbox.
-     * @type {number}
-     * @const
-     */
-    var STATE_TOOLBOX: number;
-
-    /**
-     * The distance to move the cursor on the workspace.
-     * @type {number}
-     * @const
-     */
-    var WS_MOVE_DISTANCE: number;
-
-    /**
-     * Object holding default action names.
-     * @enum {string}
-     */
-    enum actionNames { PREVIOUS, NEXT, IN, OUT, INSERT, MARK, DISCONNECT, TOOLBOX, EXIT, TOGGLE_KEYBOARD_NAV, MOVE_WS_CURSOR_UP, MOVE_WS_CURSOR_DOWN, MOVE_WS_CURSOR_LEFT, MOVE_WS_CURSOR_RIGHT } 
-
-    /**
-     * The name of the marker reserved for internal use.
-     * @type {string}
-     * @const
-     */
-    var MARKER_NAME: string;
-
-    /**
-     * Get the local marker.
-     * @return {Blockly.Marker} The local marker for the main workspace.
-     */
-    function getMarker(): Blockly.Marker;
-
-    /**
-     * Get the workspace that is being navigated.
-     * @return {!Blockly.WorkspaceSvg} The workspace being navigated.
-     * TODO: Remove this in favor or using passed in workspaces.
-     */
-    function getNavigationWorkspace(): Blockly.WorkspaceSvg;
-
-    /**
-     * If there is a marked connection try connecting the block from the flyout to
-     * that connection. If no connection has been marked then inserting will place
-     * it on the workspace.
-     * @param {!Blockly.WorkspaceSvg} workspace The main workspace.
-     */
-    function insertFromFlyout(workspace: Blockly.WorkspaceSvg): void;
-
-    /**
-     * Tries to connect the given block to the destination connection, making an
-     * intelligent guess about which connection to use to on the moving block.
-     * @param {!Blockly.BlockSvg} block The block to move.
-     * @param {!Blockly.RenderedConnection} destConnection The connection to connect
-     *     to.
-     * @return {boolean} Whether the connection was successful.
-     */
-    function insertBlock(block: Blockly.BlockSvg, destConnection: Blockly.RenderedConnection): boolean;
-
-    /**
-     * Set the current navigation state.
-     * @param {number} newState The new navigation state.
-     * @package
-     */
-    function setState(newState: number): void;
-
-    /**
-     * Before a block is deleted move the cursor to the appropriate position.
-     * @param {!Blockly.BlockSvg} deletedBlock The block that is being deleted.
-     */
-    function moveCursorOnBlockDelete(deletedBlock: Blockly.BlockSvg): void;
-
-    /**
-     * When a block that the cursor is on is mutated move the cursor to the block
-     * level.
-     * @param {!Blockly.BlockSvg} mutatedBlock The block that is being mutated.
-     * @package
-     */
-    function moveCursorOnBlockMutation(mutatedBlock: Blockly.BlockSvg): void;
-
-    /**
-     * Enable accessibility mode.
-     */
-    function enableKeyboardAccessibility(): void;
-
-    /**
-     * Disable accessibility mode.
-     */
-    function disableKeyboardAccessibility(): void;
-
-    /**
-     * Keyboard shortcut to go to the previous location when in keyboard navigation
-     * mode.
-     */
-    function registerPrevious(): void;
-
-    /**
-     * Keyboard shortcut to go to the out location when in keyboard navigation
-     * mode.
-     */
-    function registerOut(): void;
-
-    /**
-     * Keyboard shortcut to go to the next location when in keyboard navigation
-     * mode.
-     */
-    function registerNext(): void;
-
-    /**
-     * Keyboard shortcut to go to the in location when in keyboard navigation mode.
-     */
-    function registerIn(): void;
-
-    /**
-     * Keyboard shortcut to connect a block to a marked location when in keyboard
-     * navigation mode.
-     */
-    function registerInsert(): void;
-
-    /** Keyboard shortcut to mark a location when in keyboard navigation mode. */
-    function registerMark(): void;
-
-    /**
-     * Keyboard shortcut to disconnect two blocks when in keyboard navigation mode.
-     */
-    function registerDisconnect(): void;
-
-    /**
-     * Keyboard shortcut to focus on the toolbox when in keyboard navigation mode.
-     */
-    function registerToolboxFocus(): void;
-
-    /**
-     * Keyboard shortcut to exit the current location and focus on the workspace
-     * when in keyboard navigation mode.
-     */
-    function registerExit(): void;
-
-    /** Keyboard shortcut to turn keyboard navigation on or off. */
-    function registerToggleKeyboardNav(): void;
-
-    /**
-     * Keyboard shortcut to move the cursor on the workspace to the left when in
-     * keyboard navigation mode.
-     */
-    function registerWorkspaceMoveLeft(): void;
-
-    /**
-     * Keyboard shortcut to move the cursor on the workspace to the right when in
-     * keyboard navigation mode.
-     */
-    function registerWorkspaceMoveRight(): void;
-
-    /**
-     * Keyboard shortcut to move the cursor on the workspace up when in keyboard
-     * navigation mode.
-     */
-    function registerWorkspaceMoveUp(): void;
-
-    /**
-     * Keyboard shortcut to move the cursor on the workspace down when in keyboard
-     * navigation mode.
-     */
-    function registerWorkspaceMoveDown(): void;
-
-    /**
-     * Registers all default keyboard shortcut items for keyboard navigation. This
-     * should be called once per instance of KeyboardShortcutRegistry.
-     * @package
-     */
-    function registerNavigationShortcuts(): void;
-}
-
-
-declare module Blockly {
-
-    class TabNavigateCursor extends TabNavigateCursor__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class TabNavigateCursor__Class extends Blockly.BasicCursor__Class  { 
-    
-            /**
-             * A cursor for navigating between tab navigable fields.
-             * @constructor
-             * @extends {Blockly.BasicCursor}
-             */
-            constructor();
-    } 
-    
 }
 
 
@@ -17664,917 +17664,6 @@ declare module Blockly.utils.xml {
 
 declare module Blockly.blockRendering {
 
-    class Measurable extends Measurable__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Measurable__Class  { 
-    
-            /**
-             * The base class to represent a part of a block that takes up space during
-             * rendering.  The constructor for each non-spacer Measurable records the size
-             * of the block element (e.g. field, statement input).
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    
-            /**
-             * The renderer's constant provider.
-             * @type {!Blockly.blockRendering.ConstantProvider}
-             * @protected
-             */
-            constants_: Blockly.blockRendering.ConstantProvider;
-    } 
-    
-}
-
-
-declare module Blockly.blockRendering {
-
-    class Connection extends Connection__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Connection__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * The base class to represent a connection and the space that it takes up on
-             * the block.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.RenderedConnection} connectionModel The connection object on
-             *     the block that this represents.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
-    } 
-    
-
-    class OutputConnection extends OutputConnection__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class OutputConnection__Class extends Blockly.blockRendering.Connection__Class  { 
-    
-            /**
-             * An object containing information about the space an output connection takes
-             * up during rendering.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {Blockly.RenderedConnection} connectionModel The connection object on
-             *     the block that this represents.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Connection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
-    } 
-    
-
-    class PreviousConnection extends PreviousConnection__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class PreviousConnection__Class extends Blockly.blockRendering.Connection__Class  { 
-    
-            /**
-             * An object containing information about the space a previous connection takes
-             * up during rendering.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {Blockly.RenderedConnection} connectionModel The connection object on
-             *     the block that this represents.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Connection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
-    } 
-    
-
-    class NextConnection extends NextConnection__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class NextConnection__Class extends Blockly.blockRendering.Connection__Class  { 
-    
-            /**
-             * An object containing information about the space a next connection takes
-             * up during rendering.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {Blockly.RenderedConnection} connectionModel The connection object on
-             *     the block that this represents.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Connection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
-    } 
-    
-}
-
-
-declare module Blockly.blockRendering {
-
-    class InputConnection extends InputConnection__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class InputConnection__Class extends Blockly.blockRendering.Connection__Class  { 
-    
-            /**
-             * The base class to represent an input that takes up space on a block
-             * during rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.Input} input The input to measure and store information for.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Connection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
-    } 
-    
-
-    class InlineInput extends InlineInput__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class InlineInput__Class extends Blockly.blockRendering.InputConnection__Class  { 
-    
-            /**
-             * An object containing information about the space an inline input takes up
-             * during rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.Input} input The inline input to measure and store
-             *     information for.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.InputConnection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
-    } 
-    
-
-    class StatementInput extends StatementInput__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class StatementInput__Class extends Blockly.blockRendering.InputConnection__Class  { 
-    
-            /**
-             * An object containing information about the space a statement input takes up
-             * during rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.Input} input The statement input to measure and store
-             *     information for.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.InputConnection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
-    } 
-    
-
-    class ExternalValueInput extends ExternalValueInput__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class ExternalValueInput__Class extends Blockly.blockRendering.InputConnection__Class  { 
-    
-            /**
-             * An object containing information about the space an external value input
-             * takes up during rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.Input} input The external value input to measure and store
-             *     information for.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.InputConnection}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
-    } 
-    
-}
-
-
-declare module Blockly.blockRendering {
-
-    class Icon extends Icon__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Icon__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about the space an icon takes up during
-             * rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.Icon} icon The icon to measure and store information for.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, icon: Blockly.Icon);
-    } 
-    
-
-    class JaggedEdge extends JaggedEdge__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class JaggedEdge__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about the jagged edge of a collapsed block
-             * takes up during rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    } 
-    
-
-    class Field extends Field__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Field__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about the space a field takes up during
-             * rendering
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {!Blockly.Field} field The field to measure and store information for.
-             * @param {!Blockly.Input} parentInput The parent input for the field.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, field: Blockly.Field, parentInput: Blockly.Input);
-    } 
-    
-
-    class Hat extends Hat__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Hat__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about the space a hat takes up during
-             * rendering.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    } 
-    
-
-    class SquareCorner extends SquareCorner__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class SquareCorner__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about the space a square corner takes up
-             * during rendering.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {string=} opt_position The position of this corner.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, opt_position?: string);
-    } 
-    
-
-    class RoundCorner extends RoundCorner__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class RoundCorner__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about the space a rounded corner takes up
-             * during rendering.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {string=} opt_position The position of this corner.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, opt_position?: string);
-    } 
-    
-
-    class InRowSpacer extends InRowSpacer__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class InRowSpacer__Class extends Blockly.blockRendering.Measurable__Class  { 
-    
-            /**
-             * An object containing information about a spacer between two elements on a
-             * row.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {number} width The width of the spacer.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Measurable}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, width: number);
-    } 
-    
-}
-
-
-declare module Blockly.blockRendering {
-
-    class Row extends Row__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class Row__Class  { 
-    
-            /**
-             * An object representing a single row on a rendered block and all of its
-             * subcomponents.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    
-            /**
-             * The type of this rendering object.
-             * @package
-             * @type {number}
-             */
-            type: number;
-    
-            /**
-             * An array of elements contained in this row.
-             * @package
-             * @type {!Array.<!Blockly.blockRendering.Measurable>}
-             */
-            elements: Blockly.blockRendering.Measurable[];
-    
-            /**
-             * The height of the row.
-             * @package
-             * @type {number}
-             */
-            height: number;
-    
-            /**
-             * The width of the row, from the left edge of the block to the right.
-             * Does not include child blocks unless they are inline.
-             * @package
-             * @type {number}
-             */
-            width: number;
-    
-            /**
-             * The minimum height of the row.
-             * @package
-             * @type {number}
-             */
-            minHeight: number;
-    
-            /**
-             * The minimum width of the row, from the left edge of the block to the right.
-             * Does not include child blocks unless they are inline.
-             * @package
-             * @type {number}
-             */
-            minWidth: number;
-    
-            /**
-             * The width of the row, from the left edge of the block to the edge of the
-             * block or any connected child blocks.
-             * @package
-             * @type {number}
-             */
-            widthWithConnectedBlocks: number;
-    
-            /**
-             * The Y position of the row relative to the origin of the block's svg group.
-             * @package
-             * @type {number}
-             */
-            yPos: number;
-    
-            /**
-             * The X position of the row relative to the origin of the block's svg group.
-             * @package
-             * @type {number}
-             */
-            xPos: number;
-    
-            /**
-             * Whether the row has any external inputs.
-             * @package
-             * @type {boolean}
-             */
-            hasExternalInput: boolean;
-    
-            /**
-             * Whether the row has any statement inputs.
-             * @package
-             * @type {boolean}
-             */
-            hasStatement: boolean;
-    
-            /**
-             * Whether the row has any inline inputs.
-             * @package
-             * @type {boolean}
-             */
-            hasInlineInput: boolean;
-    
-            /**
-             * Whether the row has any dummy inputs.
-             * @package
-             * @type {boolean}
-             */
-            hasDummyInput: boolean;
-    
-            /**
-             * Whether the row has a jagged edge.
-             * @package
-             * @type {boolean}
-             */
-            hasJaggedEdge: boolean;
-    
-            /**
-             * The renderer's constant provider.
-             * @type {!Blockly.blockRendering.ConstantProvider}
-             * @protected
-             */
-            constants_: Blockly.blockRendering.ConstantProvider;
-    
-            /**
-             * Alignment of the row.
-             * @package
-             * @type {?number}
-             */
-            align: number;
-    
-            /**
-             * Inspect all subcomponents and populate all size properties on the row.
-             * @package
-             */
-            measure(): void;
-    
-            /**
-             * Get the last input on this row, if it has one.
-             * @return {Blockly.blockRendering.InputConnection} The last input on the row,
-             *     or null.
-             * @package
-             */
-            getLastInput(): Blockly.blockRendering.InputConnection;
-    
-            /**
-             * Determines whether this row should start with an element spacer.
-             * @return {boolean} Whether the row should start with a spacer.
-             * @package
-             */
-            startsWithElemSpacer(): boolean;
-    
-            /**
-             * Determines whether this row should end with an element spacer.
-             * @return {boolean} Whether the row should end with a spacer.
-             * @package
-             */
-            endsWithElemSpacer(): boolean;
-    
-            /**
-             * Convenience method to get the first spacer element on this row.
-             * @return {Blockly.blockRendering.InRowSpacer} The first spacer element on
-             *   this row.
-             * @package
-             */
-            getFirstSpacer(): Blockly.blockRendering.InRowSpacer;
-    
-            /**
-             * Convenience method to get the last spacer element on this row.
-             * @return {Blockly.blockRendering.InRowSpacer} The last spacer element on
-             *   this row.
-             * @package
-             */
-            getLastSpacer(): Blockly.blockRendering.InRowSpacer;
-    } 
-    
-
-    class TopRow extends TopRow__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class TopRow__Class extends Blockly.blockRendering.Row__Class  { 
-    
-            /**
-             * An object containing information about what elements are in the top row of a
-             * block as well as sizing information for the top row.
-             * Elements in a top row can consist of corners, hats, spacers, and previous
-             * connections.
-             * After this constructor is called, the row will contain all non-spacer
-             * elements it needs.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Row}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    
-            /**
-             * The starting point for drawing the row, in the y direction.
-             * This allows us to draw hats and similar shapes that don't start at the
-             * origin. Must be non-negative (see #2820).
-             * @package
-             * @type {number}
-             */
-            capline: number;
-    
-            /**
-             * How much the row extends up above its capline.
-             * @type {number}
-             */
-            ascenderHeight: number;
-    
-            /**
-             * Whether the block has a previous connection.
-             * @package
-             * @type {boolean}
-             */
-            hasPreviousConnection: boolean;
-    
-            /**
-             * The previous connection on the block, if any.
-             * @type {Blockly.blockRendering.PreviousConnection}
-             */
-            connection: Blockly.blockRendering.PreviousConnection;
-    
-            /**
-             * Returns whether or not the top row has a left square corner.
-             * @param {!Blockly.BlockSvg} block The block whose top row this represents.
-             * @return {boolean} Whether or not the top row has a left square corner.
-             */
-            hasLeftSquareCorner(block: Blockly.BlockSvg): boolean;
-    
-            /**
-             * Returns whether or not the top row has a right square corner.
-             * @param {!Blockly.BlockSvg} _block The block whose top row this represents.
-             * @return {boolean} Whether or not the top row has a right square corner.
-             */
-            hasRightSquareCorner(_block: Blockly.BlockSvg): boolean;
-    } 
-    
-
-    class BottomRow extends BottomRow__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class BottomRow__Class extends Blockly.blockRendering.Row__Class  { 
-    
-            /**
-             * An object containing information about what elements are in the bottom row of
-             * a block as well as spacing information for the top row.
-             * Elements in a bottom row can consist of corners, spacers and next
-             * connections.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Row}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    
-            /**
-             * Whether this row has a next connection.
-             * @package
-             * @type {boolean}
-             */
-            hasNextConnection: boolean;
-    
-            /**
-             * The next connection on the row, if any.
-             * @package
-             * @type {Blockly.blockRendering.NextConnection}
-             */
-            connection: Blockly.blockRendering.NextConnection;
-    
-            /**
-             * The amount that the bottom of the block extends below the horizontal edge,
-             * e.g. because of a next connection.  Must be non-negative (see #2820).
-             * @package
-             * @type {number}
-             */
-            descenderHeight: number;
-    
-            /**
-             * The Y position of the bottom edge of the block, relative to the origin
-             * of the block rendering.
-             * @type {number}
-             */
-            baseline: number;
-    
-            /**
-             * Returns whether or not the bottom row has a left square corner.
-             * @param {!Blockly.BlockSvg} block The block whose bottom row this represents.
-             * @return {boolean} Whether or not the bottom row has a left square corner.
-             */
-            hasLeftSquareCorner(block: Blockly.BlockSvg): boolean;
-    
-            /**
-             * Returns whether or not the bottom row has a right square corner.
-             * @param {!Blockly.BlockSvg} _block The block whose bottom row this represents.
-             * @return {boolean} Whether or not the bottom row has a right square corner.
-             */
-            hasRightSquareCorner(_block: Blockly.BlockSvg): boolean;
-    } 
-    
-
-    class SpacerRow extends SpacerRow__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class SpacerRow__Class extends Blockly.blockRendering.Row__Class  { 
-    
-            /**
-             * An object containing information about a spacer between two rows.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @param {number} height The height of the spacer.
-             * @param {number} width The width of the spacer.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Row}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider, height: number, width: number);
-    } 
-    
-
-    class InputRow extends InputRow__Class { }
-    /** Fake class which should be extended to avoid inheriting static properties */
-    class InputRow__Class extends Blockly.blockRendering.Row__Class  { 
-    
-            /**
-             * An object containing information about a row that holds one or more inputs.
-             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
-             *   constants provider.
-             * @package
-             * @constructor
-             * @extends {Blockly.blockRendering.Row}
-             */
-            constructor(constants: Blockly.blockRendering.ConstantProvider);
-    
-            /**
-             * The total width of all blocks connected to this row.
-             * @type {number}
-             * @package
-             */
-            connectedBlockWidths: number;
-    
-            /**
-             * Inspect all subcomponents and populate all size properties on the row.
-             * @package
-             */
-            measure(): void;
-    } 
-    
-}
-
-
-declare module Blockly.blockRendering {
-
-    /**
-     * Types of rendering elements.
-     * @enum {number}
-     */
-    enum Types { NONE, FIELD, HAT, ICON, SPACER, BETWEEN_ROW_SPACER, IN_ROW_SPACER, EXTERNAL_VALUE_INPUT, INPUT, INLINE_INPUT, STATEMENT_INPUT, CONNECTION, PREVIOUS_CONNECTION, NEXT_CONNECTION, OUTPUT_CONNECTION, CORNER, LEFT_SQUARE_CORNER, LEFT_ROUND_CORNER, RIGHT_SQUARE_CORNER, RIGHT_ROUND_CORNER, JAGGED_EDGE, ROW, TOP_ROW, BOTTOM_ROW, INPUT_ROW } 
-}
-
-declare module Blockly.blockRendering.Types {
-
-    /**
-     * A Left Corner Union Type.
-     * @type {number}
-     * @const
-     * @package
-     */
-    var LEFT_CORNER: number;
-
-    /**
-     * A Right Corner Union Type.
-     * @type {number}
-     * @const
-     * @package
-     */
-    var RIGHT_CORNER: number;
-
-    /**
-     * Get the enum flag value of an existing type or register a new type.
-     * @param {!string} type The name of the type.
-     * @return {!number} The enum flag value associated with that type.
-     * @package
-     */
-    function getType(type: string): number;
-
-    /**
-     * Whether a measurable stores information about a field.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a field.
-     * @package
-     */
-    function isField(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a hat.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a hat.
-     * @package
-     */
-    function isHat(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about an icon.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about an icon.
-     * @package
-     */
-    function isIcon(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a spacer.
-     * @param {!Blockly.blockRendering.Measurable|!Blockly.blockRendering.Row} elem
-     *     The element to check.
-     * @return {number} 1 if the object stores information about a spacer.
-     * @package
-     */
-    function isSpacer(elem: Blockly.blockRendering.Measurable|Blockly.blockRendering.Row): number;
-
-    /**
-     * Whether a measurable stores information about an in-row spacer.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about an
-     *   in-row spacer.
-     * @package
-     */
-    function isInRowSpacer(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about an input.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about an input.
-     * @package
-     */
-    function isInput(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about an external input.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about an
-     *   external input.
-     * @package
-     */
-    function isExternalInput(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about an inline input.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about an
-     *   inline input.
-     * @package
-     */
-    function isInlineInput(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a statement input.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   statement input.
-     * @package
-     */
-    function isStatementInput(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a previous connection.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   previous connection.
-     * @package
-     */
-    function isPreviousConnection(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a next connection.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   next connection.
-     * @package
-     */
-    function isNextConnection(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a previous or next connection.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a previous or
-     *   next connection.
-     * @package
-     */
-    function isPreviousOrNextConnection(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a left round corner.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   left round corner.
-     * @package
-     */
-    function isLeftRoundedCorner(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a right round corner.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   right round corner.
-     * @package
-     */
-    function isRightRoundedCorner(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a left square corner.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   left square corner.
-     * @package
-     */
-    function isLeftSquareCorner(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a right square corner.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   right square corner.
-     * @package
-     */
-    function isRightSquareCorner(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a corner.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a
-     *   corner.
-     * @package
-     */
-    function isCorner(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a jagged edge.
-     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
-     * @return {number} 1 if the object stores information about a jagged edge.
-     * @package
-     */
-    function isJaggedEdge(elem: Blockly.blockRendering.Measurable): number;
-
-    /**
-     * Whether a measurable stores information about a row.
-     * @param {!Blockly.blockRendering.Row} row The row to check.
-     * @return {number} 1 if the object stores information about a row.
-     * @package
-     */
-    function isRow(row: Blockly.blockRendering.Row): number;
-
-    /**
-     * Whether a measurable stores information about a between-row spacer.
-     * @param {!Blockly.blockRendering.Row} row The row to check.
-     * @return {number} 1 if the object stores information about a
-     *   between-row spacer.
-     * @package
-     */
-    function isBetweenRowSpacer(row: Blockly.blockRendering.Row): number;
-
-    /**
-     * Whether a measurable stores information about a top row.
-     * @param {!Blockly.blockRendering.Row} row The row to check.
-     * @return {number} 1 if the object stores information about a top row.
-     * @package
-     */
-    function isTopRow(row: Blockly.blockRendering.Row): number;
-
-    /**
-     * Whether a measurable stores information about a bottom row.
-     * @param {!Blockly.blockRendering.Row} row The row to check.
-     * @return {number} 1 if the object stores information about a bottom row.
-     * @package
-     */
-    function isBottomRow(row: Blockly.blockRendering.Row): number;
-
-    /**
-     * Whether a measurable stores information about a top or bottom row.
-     * @param {!Blockly.blockRendering.Row} row The row to check.
-     * @return {number} 1 if the object stores information about a top or
-     *   bottom row.
-     * @package
-     */
-    function isTopOrBottomRow(row: Blockly.blockRendering.Row): number;
-
-    /**
-     * Whether a measurable stores information about an input row.
-     * @param {!Blockly.blockRendering.Row} row The row to check.
-     * @return {number} 1 if the object stores information about an input row.
-     * @package
-     */
-    function isInputRow(row: Blockly.blockRendering.Row): number;
-}
-
-
-declare module Blockly.blockRendering {
-
     /**
      * Whether or not the debugger is turned on.
      * @type {boolean}
@@ -20657,6 +19746,917 @@ declare module Blockly.blockRendering {
             render(block: Blockly.BlockSvg): void;
     } 
     
+}
+
+
+declare module Blockly.blockRendering {
+
+    class Measurable extends Measurable__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Measurable__Class  { 
+    
+            /**
+             * The base class to represent a part of a block that takes up space during
+             * rendering.  The constructor for each non-spacer Measurable records the size
+             * of the block element (e.g. field, statement input).
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    
+            /**
+             * The renderer's constant provider.
+             * @type {!Blockly.blockRendering.ConstantProvider}
+             * @protected
+             */
+            constants_: Blockly.blockRendering.ConstantProvider;
+    } 
+    
+}
+
+
+declare module Blockly.blockRendering {
+
+    class Connection extends Connection__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Connection__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * The base class to represent a connection and the space that it takes up on
+             * the block.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.RenderedConnection} connectionModel The connection object on
+             *     the block that this represents.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
+    } 
+    
+
+    class OutputConnection extends OutputConnection__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class OutputConnection__Class extends Blockly.blockRendering.Connection__Class  { 
+    
+            /**
+             * An object containing information about the space an output connection takes
+             * up during rendering.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {Blockly.RenderedConnection} connectionModel The connection object on
+             *     the block that this represents.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Connection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
+    } 
+    
+
+    class PreviousConnection extends PreviousConnection__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class PreviousConnection__Class extends Blockly.blockRendering.Connection__Class  { 
+    
+            /**
+             * An object containing information about the space a previous connection takes
+             * up during rendering.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {Blockly.RenderedConnection} connectionModel The connection object on
+             *     the block that this represents.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Connection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
+    } 
+    
+
+    class NextConnection extends NextConnection__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class NextConnection__Class extends Blockly.blockRendering.Connection__Class  { 
+    
+            /**
+             * An object containing information about the space a next connection takes
+             * up during rendering.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {Blockly.RenderedConnection} connectionModel The connection object on
+             *     the block that this represents.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Connection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, connectionModel: Blockly.RenderedConnection);
+    } 
+    
+}
+
+
+declare module Blockly.blockRendering {
+
+    class InputConnection extends InputConnection__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class InputConnection__Class extends Blockly.blockRendering.Connection__Class  { 
+    
+            /**
+             * The base class to represent an input that takes up space on a block
+             * during rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.Input} input The input to measure and store information for.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Connection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
+    } 
+    
+
+    class InlineInput extends InlineInput__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class InlineInput__Class extends Blockly.blockRendering.InputConnection__Class  { 
+    
+            /**
+             * An object containing information about the space an inline input takes up
+             * during rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.Input} input The inline input to measure and store
+             *     information for.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.InputConnection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
+    } 
+    
+
+    class StatementInput extends StatementInput__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class StatementInput__Class extends Blockly.blockRendering.InputConnection__Class  { 
+    
+            /**
+             * An object containing information about the space a statement input takes up
+             * during rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.Input} input The statement input to measure and store
+             *     information for.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.InputConnection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
+    } 
+    
+
+    class ExternalValueInput extends ExternalValueInput__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class ExternalValueInput__Class extends Blockly.blockRendering.InputConnection__Class  { 
+    
+            /**
+             * An object containing information about the space an external value input
+             * takes up during rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.Input} input The external value input to measure and store
+             *     information for.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.InputConnection}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, input: Blockly.Input);
+    } 
+    
+}
+
+
+declare module Blockly.blockRendering {
+
+    class Icon extends Icon__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Icon__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about the space an icon takes up during
+             * rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.Icon} icon The icon to measure and store information for.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, icon: Blockly.Icon);
+    } 
+    
+
+    class JaggedEdge extends JaggedEdge__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class JaggedEdge__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about the jagged edge of a collapsed block
+             * takes up during rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    } 
+    
+
+    class Field extends Field__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Field__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about the space a field takes up during
+             * rendering
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {!Blockly.Field} field The field to measure and store information for.
+             * @param {!Blockly.Input} parentInput The parent input for the field.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, field: Blockly.Field, parentInput: Blockly.Input);
+    } 
+    
+
+    class Hat extends Hat__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Hat__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about the space a hat takes up during
+             * rendering.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    } 
+    
+
+    class SquareCorner extends SquareCorner__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class SquareCorner__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about the space a square corner takes up
+             * during rendering.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {string=} opt_position The position of this corner.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, opt_position?: string);
+    } 
+    
+
+    class RoundCorner extends RoundCorner__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class RoundCorner__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about the space a rounded corner takes up
+             * during rendering.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {string=} opt_position The position of this corner.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, opt_position?: string);
+    } 
+    
+
+    class InRowSpacer extends InRowSpacer__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class InRowSpacer__Class extends Blockly.blockRendering.Measurable__Class  { 
+    
+            /**
+             * An object containing information about a spacer between two elements on a
+             * row.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {number} width The width of the spacer.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Measurable}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, width: number);
+    } 
+    
+}
+
+
+declare module Blockly.blockRendering {
+
+    class Row extends Row__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class Row__Class  { 
+    
+            /**
+             * An object representing a single row on a rendered block and all of its
+             * subcomponents.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    
+            /**
+             * The type of this rendering object.
+             * @package
+             * @type {number}
+             */
+            type: number;
+    
+            /**
+             * An array of elements contained in this row.
+             * @package
+             * @type {!Array.<!Blockly.blockRendering.Measurable>}
+             */
+            elements: Blockly.blockRendering.Measurable[];
+    
+            /**
+             * The height of the row.
+             * @package
+             * @type {number}
+             */
+            height: number;
+    
+            /**
+             * The width of the row, from the left edge of the block to the right.
+             * Does not include child blocks unless they are inline.
+             * @package
+             * @type {number}
+             */
+            width: number;
+    
+            /**
+             * The minimum height of the row.
+             * @package
+             * @type {number}
+             */
+            minHeight: number;
+    
+            /**
+             * The minimum width of the row, from the left edge of the block to the right.
+             * Does not include child blocks unless they are inline.
+             * @package
+             * @type {number}
+             */
+            minWidth: number;
+    
+            /**
+             * The width of the row, from the left edge of the block to the edge of the
+             * block or any connected child blocks.
+             * @package
+             * @type {number}
+             */
+            widthWithConnectedBlocks: number;
+    
+            /**
+             * The Y position of the row relative to the origin of the block's svg group.
+             * @package
+             * @type {number}
+             */
+            yPos: number;
+    
+            /**
+             * The X position of the row relative to the origin of the block's svg group.
+             * @package
+             * @type {number}
+             */
+            xPos: number;
+    
+            /**
+             * Whether the row has any external inputs.
+             * @package
+             * @type {boolean}
+             */
+            hasExternalInput: boolean;
+    
+            /**
+             * Whether the row has any statement inputs.
+             * @package
+             * @type {boolean}
+             */
+            hasStatement: boolean;
+    
+            /**
+             * Whether the row has any inline inputs.
+             * @package
+             * @type {boolean}
+             */
+            hasInlineInput: boolean;
+    
+            /**
+             * Whether the row has any dummy inputs.
+             * @package
+             * @type {boolean}
+             */
+            hasDummyInput: boolean;
+    
+            /**
+             * Whether the row has a jagged edge.
+             * @package
+             * @type {boolean}
+             */
+            hasJaggedEdge: boolean;
+    
+            /**
+             * The renderer's constant provider.
+             * @type {!Blockly.blockRendering.ConstantProvider}
+             * @protected
+             */
+            constants_: Blockly.blockRendering.ConstantProvider;
+    
+            /**
+             * Alignment of the row.
+             * @package
+             * @type {?number}
+             */
+            align: number;
+    
+            /**
+             * Inspect all subcomponents and populate all size properties on the row.
+             * @package
+             */
+            measure(): void;
+    
+            /**
+             * Get the last input on this row, if it has one.
+             * @return {Blockly.blockRendering.InputConnection} The last input on the row,
+             *     or null.
+             * @package
+             */
+            getLastInput(): Blockly.blockRendering.InputConnection;
+    
+            /**
+             * Determines whether this row should start with an element spacer.
+             * @return {boolean} Whether the row should start with a spacer.
+             * @package
+             */
+            startsWithElemSpacer(): boolean;
+    
+            /**
+             * Determines whether this row should end with an element spacer.
+             * @return {boolean} Whether the row should end with a spacer.
+             * @package
+             */
+            endsWithElemSpacer(): boolean;
+    
+            /**
+             * Convenience method to get the first spacer element on this row.
+             * @return {Blockly.blockRendering.InRowSpacer} The first spacer element on
+             *   this row.
+             * @package
+             */
+            getFirstSpacer(): Blockly.blockRendering.InRowSpacer;
+    
+            /**
+             * Convenience method to get the last spacer element on this row.
+             * @return {Blockly.blockRendering.InRowSpacer} The last spacer element on
+             *   this row.
+             * @package
+             */
+            getLastSpacer(): Blockly.blockRendering.InRowSpacer;
+    } 
+    
+
+    class TopRow extends TopRow__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class TopRow__Class extends Blockly.blockRendering.Row__Class  { 
+    
+            /**
+             * An object containing information about what elements are in the top row of a
+             * block as well as sizing information for the top row.
+             * Elements in a top row can consist of corners, hats, spacers, and previous
+             * connections.
+             * After this constructor is called, the row will contain all non-spacer
+             * elements it needs.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Row}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    
+            /**
+             * The starting point for drawing the row, in the y direction.
+             * This allows us to draw hats and similar shapes that don't start at the
+             * origin. Must be non-negative (see #2820).
+             * @package
+             * @type {number}
+             */
+            capline: number;
+    
+            /**
+             * How much the row extends up above its capline.
+             * @type {number}
+             */
+            ascenderHeight: number;
+    
+            /**
+             * Whether the block has a previous connection.
+             * @package
+             * @type {boolean}
+             */
+            hasPreviousConnection: boolean;
+    
+            /**
+             * The previous connection on the block, if any.
+             * @type {Blockly.blockRendering.PreviousConnection}
+             */
+            connection: Blockly.blockRendering.PreviousConnection;
+    
+            /**
+             * Returns whether or not the top row has a left square corner.
+             * @param {!Blockly.BlockSvg} block The block whose top row this represents.
+             * @return {boolean} Whether or not the top row has a left square corner.
+             */
+            hasLeftSquareCorner(block: Blockly.BlockSvg): boolean;
+    
+            /**
+             * Returns whether or not the top row has a right square corner.
+             * @param {!Blockly.BlockSvg} _block The block whose top row this represents.
+             * @return {boolean} Whether or not the top row has a right square corner.
+             */
+            hasRightSquareCorner(_block: Blockly.BlockSvg): boolean;
+    } 
+    
+
+    class BottomRow extends BottomRow__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class BottomRow__Class extends Blockly.blockRendering.Row__Class  { 
+    
+            /**
+             * An object containing information about what elements are in the bottom row of
+             * a block as well as spacing information for the top row.
+             * Elements in a bottom row can consist of corners, spacers and next
+             * connections.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Row}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    
+            /**
+             * Whether this row has a next connection.
+             * @package
+             * @type {boolean}
+             */
+            hasNextConnection: boolean;
+    
+            /**
+             * The next connection on the row, if any.
+             * @package
+             * @type {Blockly.blockRendering.NextConnection}
+             */
+            connection: Blockly.blockRendering.NextConnection;
+    
+            /**
+             * The amount that the bottom of the block extends below the horizontal edge,
+             * e.g. because of a next connection.  Must be non-negative (see #2820).
+             * @package
+             * @type {number}
+             */
+            descenderHeight: number;
+    
+            /**
+             * The Y position of the bottom edge of the block, relative to the origin
+             * of the block rendering.
+             * @type {number}
+             */
+            baseline: number;
+    
+            /**
+             * Returns whether or not the bottom row has a left square corner.
+             * @param {!Blockly.BlockSvg} block The block whose bottom row this represents.
+             * @return {boolean} Whether or not the bottom row has a left square corner.
+             */
+            hasLeftSquareCorner(block: Blockly.BlockSvg): boolean;
+    
+            /**
+             * Returns whether or not the bottom row has a right square corner.
+             * @param {!Blockly.BlockSvg} _block The block whose bottom row this represents.
+             * @return {boolean} Whether or not the bottom row has a right square corner.
+             */
+            hasRightSquareCorner(_block: Blockly.BlockSvg): boolean;
+    } 
+    
+
+    class SpacerRow extends SpacerRow__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class SpacerRow__Class extends Blockly.blockRendering.Row__Class  { 
+    
+            /**
+             * An object containing information about a spacer between two rows.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @param {number} height The height of the spacer.
+             * @param {number} width The width of the spacer.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Row}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider, height: number, width: number);
+    } 
+    
+
+    class InputRow extends InputRow__Class { }
+    /** Fake class which should be extended to avoid inheriting static properties */
+    class InputRow__Class extends Blockly.blockRendering.Row__Class  { 
+    
+            /**
+             * An object containing information about a row that holds one or more inputs.
+             * @param {!Blockly.blockRendering.ConstantProvider} constants The rendering
+             *   constants provider.
+             * @package
+             * @constructor
+             * @extends {Blockly.blockRendering.Row}
+             */
+            constructor(constants: Blockly.blockRendering.ConstantProvider);
+    
+            /**
+             * The total width of all blocks connected to this row.
+             * @type {number}
+             * @package
+             */
+            connectedBlockWidths: number;
+    
+            /**
+             * Inspect all subcomponents and populate all size properties on the row.
+             * @package
+             */
+            measure(): void;
+    } 
+    
+}
+
+
+declare module Blockly.blockRendering {
+
+    /**
+     * Types of rendering elements.
+     * @enum {number}
+     */
+    enum Types { NONE, FIELD, HAT, ICON, SPACER, BETWEEN_ROW_SPACER, IN_ROW_SPACER, EXTERNAL_VALUE_INPUT, INPUT, INLINE_INPUT, STATEMENT_INPUT, CONNECTION, PREVIOUS_CONNECTION, NEXT_CONNECTION, OUTPUT_CONNECTION, CORNER, LEFT_SQUARE_CORNER, LEFT_ROUND_CORNER, RIGHT_SQUARE_CORNER, RIGHT_ROUND_CORNER, JAGGED_EDGE, ROW, TOP_ROW, BOTTOM_ROW, INPUT_ROW } 
+}
+
+declare module Blockly.blockRendering.Types {
+
+    /**
+     * A Left Corner Union Type.
+     * @type {number}
+     * @const
+     * @package
+     */
+    var LEFT_CORNER: number;
+
+    /**
+     * A Right Corner Union Type.
+     * @type {number}
+     * @const
+     * @package
+     */
+    var RIGHT_CORNER: number;
+
+    /**
+     * Get the enum flag value of an existing type or register a new type.
+     * @param {!string} type The name of the type.
+     * @return {!number} The enum flag value associated with that type.
+     * @package
+     */
+    function getType(type: string): number;
+
+    /**
+     * Whether a measurable stores information about a field.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a field.
+     * @package
+     */
+    function isField(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a hat.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a hat.
+     * @package
+     */
+    function isHat(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about an icon.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about an icon.
+     * @package
+     */
+    function isIcon(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a spacer.
+     * @param {!Blockly.blockRendering.Measurable|!Blockly.blockRendering.Row} elem
+     *     The element to check.
+     * @return {number} 1 if the object stores information about a spacer.
+     * @package
+     */
+    function isSpacer(elem: Blockly.blockRendering.Measurable|Blockly.blockRendering.Row): number;
+
+    /**
+     * Whether a measurable stores information about an in-row spacer.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about an
+     *   in-row spacer.
+     * @package
+     */
+    function isInRowSpacer(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about an input.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about an input.
+     * @package
+     */
+    function isInput(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about an external input.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about an
+     *   external input.
+     * @package
+     */
+    function isExternalInput(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about an inline input.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about an
+     *   inline input.
+     * @package
+     */
+    function isInlineInput(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a statement input.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   statement input.
+     * @package
+     */
+    function isStatementInput(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a previous connection.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   previous connection.
+     * @package
+     */
+    function isPreviousConnection(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a next connection.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   next connection.
+     * @package
+     */
+    function isNextConnection(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a previous or next connection.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a previous or
+     *   next connection.
+     * @package
+     */
+    function isPreviousOrNextConnection(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a left round corner.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   left round corner.
+     * @package
+     */
+    function isLeftRoundedCorner(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a right round corner.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   right round corner.
+     * @package
+     */
+    function isRightRoundedCorner(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a left square corner.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   left square corner.
+     * @package
+     */
+    function isLeftSquareCorner(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a right square corner.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   right square corner.
+     * @package
+     */
+    function isRightSquareCorner(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a corner.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a
+     *   corner.
+     * @package
+     */
+    function isCorner(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a jagged edge.
+     * @param {!Blockly.blockRendering.Measurable} elem The element to check.
+     * @return {number} 1 if the object stores information about a jagged edge.
+     * @package
+     */
+    function isJaggedEdge(elem: Blockly.blockRendering.Measurable): number;
+
+    /**
+     * Whether a measurable stores information about a row.
+     * @param {!Blockly.blockRendering.Row} row The row to check.
+     * @return {number} 1 if the object stores information about a row.
+     * @package
+     */
+    function isRow(row: Blockly.blockRendering.Row): number;
+
+    /**
+     * Whether a measurable stores information about a between-row spacer.
+     * @param {!Blockly.blockRendering.Row} row The row to check.
+     * @return {number} 1 if the object stores information about a
+     *   between-row spacer.
+     * @package
+     */
+    function isBetweenRowSpacer(row: Blockly.blockRendering.Row): number;
+
+    /**
+     * Whether a measurable stores information about a top row.
+     * @param {!Blockly.blockRendering.Row} row The row to check.
+     * @return {number} 1 if the object stores information about a top row.
+     * @package
+     */
+    function isTopRow(row: Blockly.blockRendering.Row): number;
+
+    /**
+     * Whether a measurable stores information about a bottom row.
+     * @param {!Blockly.blockRendering.Row} row The row to check.
+     * @return {number} 1 if the object stores information about a bottom row.
+     * @package
+     */
+    function isBottomRow(row: Blockly.blockRendering.Row): number;
+
+    /**
+     * Whether a measurable stores information about a top or bottom row.
+     * @param {!Blockly.blockRendering.Row} row The row to check.
+     * @return {number} 1 if the object stores information about a top or
+     *   bottom row.
+     * @package
+     */
+    function isTopOrBottomRow(row: Blockly.blockRendering.Row): number;
+
+    /**
+     * Whether a measurable stores information about an input row.
+     * @param {!Blockly.blockRendering.Row} row The row to check.
+     * @return {number} 1 if the object stores information about an input row.
+     * @package
+     */
+    function isInputRow(row: Blockly.blockRendering.Row): number;
 }
 
 

@@ -290,16 +290,16 @@ Blockly.Toolbox.prototype.onKeyDown_ = function(e) {
   var handled = false;
   switch (e.keyCode) {
     case Blockly.utils.KeyCodes.DOWN:
-      handled = this.selectNext_();
+      handled = this.selectNext();
       break;
     case Blockly.utils.KeyCodes.UP:
-      handled = this.selectPrevious_();
+      handled = this.selectPrevious();
       break;
     case Blockly.utils.KeyCodes.LEFT:
-      handled = this.selectParent_();
+      handled = this.selectParent();
       break;
     case Blockly.utils.KeyCodes.RIGHT:
-      handled = this.selectChild_();
+      handled = this.selectChild();
       break;
     case Blockly.utils.KeyCodes.ENTER:
     case Blockly.utils.KeyCodes.SPACE:
@@ -823,9 +823,9 @@ Blockly.Toolbox.prototype.fireSelectEvent_ = function(oldItem, newItem) {
 /**
  * Closes the current item if it is expanded, or selects the parent.
  * @return {boolean} True if a parent category was selected, false otherwise.
- * @private
+ * @public
  */
-Blockly.Toolbox.prototype.selectParent_ = function() {
+Blockly.Toolbox.prototype.selectParent = function() {
   if (!this.selectedItem_) {
     return false;
   }
@@ -846,9 +846,9 @@ Blockly.Toolbox.prototype.selectParent_ = function() {
  * Selects the first child of the currently selected item, or nothing if the
  * toolbox item has no children.
  * @return {boolean} True if a child category was selected, false otherwise.
- * @private
+ * @public
  */
-Blockly.Toolbox.prototype.selectChild_ = function() {
+Blockly.Toolbox.prototype.selectChild = function() {
   if (!this.selectedItem_ || !this.selectedItem_.isCollapsible()) {
     return false;
   }
@@ -858,7 +858,7 @@ Blockly.Toolbox.prototype.selectChild_ = function() {
     collapsibleItem.setExpanded(true);
     return true;
   } else {
-    this.selectNext_();
+    this.selectNext();
     return true;
   }
 };
@@ -866,9 +866,9 @@ Blockly.Toolbox.prototype.selectChild_ = function() {
 /**
  * Selects the next visible toolbox item.
  * @return {boolean} True if a next category was selected, false otherwise.
- * @private
+ * @public
  */
-Blockly.Toolbox.prototype.selectNext_ = function() {
+Blockly.Toolbox.prototype.selectNext = function() {
   if (!this.selectedItem_) {
     return false;
   }
@@ -890,9 +890,9 @@ Blockly.Toolbox.prototype.selectNext_ = function() {
 /**
  * Selects the previous visible toolbox item.
  * @return {boolean} True if a previous category was selected, false otherwise.
- * @private
+ * @public
  */
-Blockly.Toolbox.prototype.selectPrevious_ = function() {
+Blockly.Toolbox.prototype.selectPrevious = function() {
   if (!this.selectedItem_) {
     return false;
   }

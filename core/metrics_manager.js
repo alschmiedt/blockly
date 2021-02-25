@@ -11,6 +11,7 @@
 'use strict';
 
 goog.provide('Blockly.MetricsManager');
+goog.provide('Blockly.MutatorMetricsManager');
 
 goog.require('Blockly.IMetricsManager');
 goog.require('Blockly.utils.Size');
@@ -26,16 +27,25 @@ goog.requireType('Blockly.WorkspaceSvg');
  * The manager for all workspace metrics calculations.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace to calculate metrics
  *     for.
+ * @param {Blockly.IFlyout|Blockly.Mutator} opt_owner The optional owner of the
+ *     metrics.
  * @implements {Blockly.IMetricsManager}
  * @constructor
  */
-Blockly.MetricsManager = function(workspace) {
+Blockly.MetricsManager = function(workspace, opt_owner) {
   /**
    * The workspace to calculate metrics for.
    * @type {!Blockly.WorkspaceSvg}
    * @protected
    */
   this.workspace_ = workspace;
+
+  /**
+   * The optional owner of the metrics.
+   * TODO: Don't love this type.
+   * @type {Blockly.IFlyout|Blockly.Mutator}
+   */
+  this.opt_owner = opt_owner;
 };
 
 /**
@@ -385,3 +395,46 @@ Blockly.MetricsManager.prototype.getMetrics = function() {
 Blockly.registry.register(
     Blockly.registry.Type.METRICS_MANAGER, Blockly.registry.DEFAULT,
     Blockly.MetricsManager);
+
+
+/**
+ * 
+ * @param {*} workspace 
+ * @param {*} opt_owner
+ * @extends {Blockly.MetricsManager}
+ * @constructor
+ */
+Blockly.MutatorMetricsManager = function(workspace, opt_owner) {
+  this.unsupported = 0;
+  Blockly.MutatorMetricsManager.superClass_.constructor.call(this, workspace, opt_owner);
+};
+Blockly.utils.object.inherits(Blockly.MutatorMetricsManager, Blockly.MetricsManager);
+
+Blockly.MutatorMetricsManager.prototype.getContentMetrics = function() {
+  return {
+    contentHeight: this.unsupported,
+    contentWidth: this.unsupported,
+    contentTop: this.unsupported,
+    contentLeft: this.unsupported,
+  };
+};
+
+Blockly.MutatorMetricsManager.prototype.getViewMetrics = function() {
+  var flyout = this.opt_owner.workspace_.getFlyout();
+  var flyoutWidth = flyout ? flyout.getWidth() : 0;
+  return {
+    viewHeight: this.opt_owner.workspaceHeight_,
+    viewWidth: this.opt_owner.workspaceWidth_ - flyoutWidth,
+    viewTop: this.unsupported,
+    viewLeft: this.unsupported,
+  };
+};
+
+Blockly.MutatorMetricsManager.prototype.getAbsoluteMetrics = function() {
+  var flyout = this.opt_owner.workspace_.getFlyout();
+  var flyoutWidth = flyout ? flyout.getWidth() : 0;
+  return {
+    absoluteTop: this.unsupported,
+    absoluteLeft: this.workspace_.RTL ? 0 : flyoutWidth
+  };
+};

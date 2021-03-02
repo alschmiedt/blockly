@@ -10,6 +10,7 @@
  */
 'use strict';
 
+goog.provide('Blockly.FlyoutMetricsManager');
 goog.provide('Blockly.MetricsManager');
 goog.provide('Blockly.MutatorMetricsManager');
 
@@ -27,25 +28,16 @@ goog.requireType('Blockly.WorkspaceSvg');
  * The manager for all workspace metrics calculations.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace to calculate metrics
  *     for.
- * @param {Blockly.IFlyout|Blockly.Mutator} opt_owner The optional owner of the
- *     metrics.
  * @implements {Blockly.IMetricsManager}
  * @constructor
  */
-Blockly.MetricsManager = function(workspace, opt_owner) {
+Blockly.MetricsManager = function(workspace) {
   /**
    * The workspace to calculate metrics for.
    * @type {!Blockly.WorkspaceSvg}
    * @protected
    */
   this.workspace_ = workspace;
-
-  /**
-   * The optional owner of the metrics.
-   * TODO: Don't love this type.
-   * @type {Blockly.IFlyout|Blockly.Mutator}
-   */
-  this.opt_owner = opt_owner;
 };
 
 /**
@@ -169,7 +161,8 @@ Blockly.MetricsManager.prototype.getContentDimensionsExact_ = function() {
  * @public
  */
 Blockly.MetricsManager.prototype.getFlyoutMetrics = function(opt_own) {
-  var flyoutDimensions = this.getDimensionsPx_(this.workspace_.getFlyout(opt_own));
+  var flyoutDimensions =
+      this.getDimensionsPx_(this.workspace_.getFlyout(opt_own));
   return {
     width: flyoutDimensions.width,
     height: flyoutDimensions.height,
@@ -266,7 +259,8 @@ Blockly.MetricsManager.prototype.getViewMetrics = function(
     if (toolboxPosition == Blockly.TOOLBOX_AT_TOP ||
         toolboxPosition == Blockly.TOOLBOX_AT_BOTTOM) {
       svgMetrics.height -= toolboxMetrics.height;
-    } else if (toolboxPosition == Blockly.TOOLBOX_AT_LEFT ||
+    } else if (
+        toolboxPosition == Blockly.TOOLBOX_AT_LEFT ||
         toolboxPosition == Blockly.TOOLBOX_AT_RIGHT) {
       svgMetrics.width -= toolboxMetrics.width;
     }
@@ -274,7 +268,8 @@ Blockly.MetricsManager.prototype.getViewMetrics = function(
     if (toolboxPosition == Blockly.TOOLBOX_AT_TOP ||
         toolboxPosition == Blockly.TOOLBOX_AT_BOTTOM) {
       svgMetrics.height -= flyoutMetrics.height;
-    } else if (toolboxPosition == Blockly.TOOLBOX_AT_LEFT ||
+    } else if (
+        toolboxPosition == Blockly.TOOLBOX_AT_LEFT ||
         toolboxPosition == Blockly.TOOLBOX_AT_RIGHT) {
       svgMetrics.width -= flyoutMetrics.width;
     }
@@ -396,45 +391,237 @@ Blockly.registry.register(
     Blockly.registry.Type.METRICS_MANAGER, Blockly.registry.DEFAULT,
     Blockly.MetricsManager);
 
-
 /**
- * 
- * @param {*} workspace 
- * @param {*} opt_owner
+ * Metrics manager for a mutator's workspace.
+ * @param {!Blockly.WorkspaceSvg} workspace The workspace associated with the
+ *     mutator.
+ * @param {!Blockly.Mutator} mutator The mutator to calculate metrics for.
  * @extends {Blockly.MetricsManager}
  * @constructor
  */
-Blockly.MutatorMetricsManager = function(workspace, opt_owner) {
+Blockly.MutatorMetricsManager = function(workspace, mutator) {
+  // TODO: Should this be a property or should it just be a local variable?
   this.unsupported = 0;
-  Blockly.MutatorMetricsManager.superClass_.constructor.call(this, workspace, opt_owner);
-};
-Blockly.utils.object.inherits(Blockly.MutatorMetricsManager, Blockly.MetricsManager);
 
+  /**
+   * The mutator to calculate metrics for.
+   * TODO: Update this.
+   * @type {!Blockly.Mutator}
+   * @protected
+   */
+  this.mutator_ = mutator;
+  Blockly.MutatorMetricsManager.superClass_.constructor.call(this, workspace);
+};
+Blockly.utils.object.inherits(
+    Blockly.MutatorMetricsManager, Blockly.MetricsManager);
+
+/**
+ * @override
+ */
 Blockly.MutatorMetricsManager.prototype.getContentMetrics = function() {
   return {
-    contentHeight: this.unsupported,
-    contentWidth: this.unsupported,
-    contentTop: this.unsupported,
-    contentLeft: this.unsupported,
+    height: this.unsupported,
+    width: this.unsupported,
+    top: this.unsupported,
+    left: this.unsupported,
   };
 };
 
+/**
+ * @override
+ */
 Blockly.MutatorMetricsManager.prototype.getViewMetrics = function() {
-  var flyout = this.opt_owner.workspace_.getFlyout();
+  var flyout = this.workspace_.getFlyout();
   var flyoutWidth = flyout ? flyout.getWidth() : 0;
   return {
-    viewHeight: this.opt_owner.workspaceHeight_,
-    viewWidth: this.opt_owner.workspaceWidth_ - flyoutWidth,
-    viewTop: this.unsupported,
-    viewLeft: this.unsupported,
+    height: this.mutator_.workspaceHeight_,
+    width: this.mutator_.workspaceWidth_ - flyoutWidth,
+    top: this.unsupported,
+    left: this.unsupported,
   };
 };
 
+/**
+ * @override
+ */
 Blockly.MutatorMetricsManager.prototype.getAbsoluteMetrics = function() {
-  var flyout = this.opt_owner.workspace_.getFlyout();
+  var flyout = this.workspace_.getFlyout();
   var flyoutWidth = flyout ? flyout.getWidth() : 0;
+  return {top: this.unsupported, left: this.workspace_.RTL ? 0 : flyoutWidth};
+};
+
+/**
+ * In charge of calculating metrics necessary to size scrollbars for the flyout.
+ * @param {!Blockly.WorkspaceSvg} workspace The flyout's workspace.
+ * @param {!Blockly.IFlyout} flyout The flyout.
+ * @extends {Blockly.MetricsManager}
+ * @constructor
+ */
+Blockly.FlyoutMetricsManager = function(workspace, flyout) {
+  // TODO: Should this be a property or should it just be a local variable?
+  this.unsupported = 0;
+
+  /**
+   * The flyout that owns the workspace to calculate metrics for.
+   * TODO: Update this.
+   * @type {!Blockly.IFlyout}
+   * @protected
+   */
+  this.flyout_ = flyout;
+
+  Blockly.FlyoutMetricsManager.superClass_.constructor.call(this, workspace);
+};
+Blockly.utils.object.inherits(
+    Blockly.FlyoutMetricsManager, Blockly.MetricsManager);
+
+/**
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getBoundingBox_ = function() {
+  try {
+    var optionBox = this.workspace_.getCanvas().getBBox();
+  } catch (e) {
+    // TODO: Double check this.
+    // Firefox has trouble with hidden elements (Bug 528969).
+    var optionBox = {height: 0, y: 0, width: 0, x: 0};
+  }
+  return optionBox;
+};
+
+/**
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getHorizontalContentMetrics_ =
+    function() {
+      var optionBox = this.getBoundingBox_();
+
+      return {
+        height:
+            (optionBox.height + 2 * this.flyout_.MARGIN) * this.workspace_.scale,
+        width: (optionBox.width + 2 * this.flyout_.MARGIN) * this.workspace_.scale,
+        top: 0,
+        left: 0,
+      };
+    };
+
+/**
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getVerticalContentMetrics_ = function() {
+  // TODO: Rename optionBox.
+  var optionBox = this.getBoundingBox_();
   return {
-    absoluteTop: this.unsupported,
-    absoluteLeft: this.workspace_.RTL ? 0 : flyoutWidth
+    height: optionBox.height * this.workspace_.scale + 2 * this.flyout_.MARGIN,
+    width: optionBox.width * this.workspace_.scale + 2 * this.flyout_.MARGIN,
+    top: optionBox.y,
+    left: optionBox.x,
   };
+};
+
+
+/**
+ * @override
+ */
+Blockly.FlyoutMetricsManager.prototype.getContentMetrics = function() {
+  // TODO: Figure out where the isVisible part should go?
+  if (this.flyout_.horizontalLayout) {
+    return this.getHorizontalContentMetrics_();
+  } else {
+    return this.getVerticalContentMetrics_();
+  }
+};
+
+/**
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getHorizontalViewMetrics_ = function() {
+  // TODO: width_ and toolboxPosition_ are both private.
+  var viewWidth = this.flyout_.width_ - 2 * this.flyout_.SCROLLBAR_PADDING;
+  var viewHeight = this.flyout_.height_;
+  if (this.flyout_.toolboxPosition_ == Blockly.TOOLBOX_AT_TOP) {
+    viewHeight -= this.flyout_.SCROLLBAR_PADDING;
+  }
+  return {
+    height: viewHeight,
+    width: viewWidth,
+    top: -this.workspace_.scrollY,
+    left: -this.workspace_.scrollX,
+  };
+};
+
+/**
+ * Gets the 
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getVerticalViewMetrics_ = function() {
+  // TODO: Should not be option called option box
+  // TODO: Should be passed in if possible.
+  var optionBox = this.getBoundingBox_();
+  // TODO: need a way to get the height that does not access private variables.
+  var viewHeight = this.flyout_.height_ - 2 * this.flyout_.SCROLLBAR_PADDING;
+  var viewWidth = this.flyout_.width_;
+
+  if (!this.RTL) {
+    viewWidth -= this.flyout_.SCROLLBAR_PADDING;
+  }
+  return {
+    height: viewHeight,
+    width: viewWidth,
+    top: -this.workspace_.scrollY + optionBox.y,
+    left: -this.workspace_.scrollX
+  };
+};
+
+/**
+ * @override
+ */
+Blockly.FlyoutMetricsManager.prototype.getViewMetrics = function() {
+  if (this.flyout_.horizontalLayout) {
+    return this.getHorizontalViewMetrics_();
+  } else {
+    return this.getVerticalViewMetrics_();
+  }
+};
+
+/**
+ * Gets the absolute left and absolute top of a horizontal flyout in pixel
+ * coordinates. This essentially adds padding between the top of the workspace
+ * and the parent container.
+ * @returns {!Blockly.MetricsManager.AbsoluteMetrics} The absolute metrics for
+ *     flyout's workspace.
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getHorizontalAbsoluteMetrics_ =
+    function() {
+      var absoluteTop = this.flyout_.SCROLLBAR_PADDING;
+      var absoluteLeft = this.flyout_.SCROLLBAR_PADDING;
+
+      if (this.flyout_.toolboxPosition_ == Blockly.TOOLBOX_AT_BOTTOM) {
+        absoluteTop = 0;
+      }
+      return {top: absoluteTop, left: absoluteLeft};
+    };
+
+/**
+ * Gets the absolute left and absolute top of a vertical flyout in pixel
+ * coordinates. This essentially adds padding between the top of the workspace
+ * and the parent container.
+ * @returns {!Blockly.MetricsManager.AbsoluteMetrics} The absolute metrics for
+ *     flyout's workspace.
+ * @private
+ */
+Blockly.FlyoutMetricsManager.prototype.getVerticalAbsoluteMetrics_ =
+    function() {
+      return {top: this.flyout_.SCROLLBAR_PADDING, left: 0};
+    };
+
+/**
+ * @override
+ */
+Blockly.FlyoutMetricsManager.prototype.getAbsoluteMetrics = function() {
+  if (this.flyout_.horizontalLayout) {
+    return this.getHorizontalAbsoluteMetrics_();
+  } else {
+    return this.getVerticalAbsoluteMetrics_();
+  }
 };

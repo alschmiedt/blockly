@@ -115,7 +115,11 @@ Blockly.parentContainer = null;
  */
 Blockly.svgSize = function(svg) {
   svg = /** @type {?} */ (svg);
-  return new Blockly.utils.Size(svg.cachedWidth_, svg.cachedHeight_);
+  if (svg.cachedWidth_ && svg.cachedHeight_) {
+    return new Blockly.utils.Size(svg.cachedWidth_, svg.cachedHeight_);
+  } else {
+    return new Blockly.utils.Size(0, 0);
+  }
 };
 
 /**

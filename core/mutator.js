@@ -150,7 +150,7 @@ Blockly.Mutator.prototype.createEditor_ = function() {
   */
   this.svgDialog_ = Blockly.utils.dom.createSvgElement(
       Blockly.utils.Svg.SVG,
-      {'x': Blockly.Bubble.BORDER_WIDTH, 'y': Blockly.Bubble.BORDER_WIDTH},
+      {'x': Blockly.Bubble.BORDER_WIDTH, 'y': Blockly.Bubble.BORDER_WIDTH, 'class': 'something'},
       null);
   // Convert the list of names into a list of XML objects for the flyout.
   if (this.quarkNames_.length) {
@@ -243,7 +243,7 @@ Blockly.Mutator.prototype.resizeBubble_ = function() {
   var height = workspaceSize.height + doubleBorderWidth * 3;
   var flyout = this.workspace_.getFlyout();
   if (flyout) {
-    var flyoutMetrics = flyout.getMetrics_();
+    var flyoutMetrics = flyout.getWorkspace().getMetrics();
     height = Math.max(height, flyoutMetrics.contentHeight + 20);
     width += flyout.getWidth();
   }
@@ -260,8 +260,11 @@ Blockly.Mutator.prototype.resizeBubble_ = function() {
     // Resize the bubble.
     this.bubble_.setBubbleSize(
         width + doubleBorderWidth, height + doubleBorderWidth);
+    console.log("SETTING CACHED HEIGHT TO: ", height);
     this.svgDialog_.setAttribute('width', this.workspaceWidth_);
     this.svgDialog_.setAttribute('height', this.workspaceHeight_);
+    this.workspace_.getParentSvg().cachedWidth_ = width;
+    this.workspace_.getParentSvg().cachedHeight_ = height;
   }
 
   if (this.block_.RTL) {
@@ -458,32 +461,32 @@ Blockly.Mutator.prototype.workspaceChanged_ = function(e) {
  *     mutator dialog's workspace.
  * @private
  */
-Blockly.Mutator.prototype.getFlyoutMetrics_ = function() {
-  // The mutator workspace only uses a subset of Blockly.utils.Metrics
-  // properties as features such as scroll and zoom are unsupported.
-  var unsupported = 0;
-  var flyout = this.workspace_.getFlyout();
-  var flyoutWidth = flyout ? flyout.getWidth() : 0;
-  return {
-    contentHeight: unsupported,
-    contentWidth: unsupported,
-    contentTop: unsupported,
-    contentLeft: unsupported,
+// Blockly.Mutator.prototype.getFlyoutMetrics_ = function() {
+//   // The mutator workspace only uses a subset of Blockly.utils.Metrics
+//   // properties as features such as scroll and zoom are unsupported.
+//   var unsupported = 0;
+//   var flyout = this.workspace_.getFlyout();
+//   var flyoutWidth = flyout ? flyout.getWidth() : 0;
+//   return {
+//     contentHeight: unsupported,
+//     contentWidth: unsupported,
+//     contentTop: unsupported,
+//     contentLeft: unsupported,
 
-    scrollHeight: unsupported,
-    scrollWidth: unsupported,
-    scrollTop: unsupported,
-    scrollLeft: unsupported,
+//     scrollHeight: unsupported,
+//     scrollWidth: unsupported,
+//     scrollTop: unsupported,
+//     scrollLeft: unsupported,
 
-    viewHeight: this.workspaceHeight_,
-    viewWidth: this.workspaceWidth_ - flyoutWidth,
-    viewTop: unsupported,
-    viewLeft: unsupported,
+//     viewHeight: this.workspaceHeight_,
+//     viewWidth: this.workspaceWidth_ - flyoutWidth,
+//     viewTop: unsupported,
+//     viewLeft: unsupported,
 
-    absoluteTop: unsupported,
-    absoluteLeft: this.workspace_.RTL ? 0 : flyoutWidth
-  };
-};
+//     absoluteTop: unsupported,
+//     absoluteLeft: this.workspace_.RTL ? 0 : flyoutWidth
+//   };
+// };
 
 /**
  * Dispose of this mutator.

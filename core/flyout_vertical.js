@@ -196,13 +196,17 @@ Blockly.VerticalFlyout.prototype.position = function() {
   if (!this.isVisible()) {
     return;
   }
+  console.log("POSITIONING");
+  console.trace();
   var targetWorkspaceMetrics = this.targetWorkspace.getMetrics();
+  
   if (!targetWorkspaceMetrics) {
     // Hidden components will return null.
     return;
   }
   // Record the height for Blockly.Flyout.getMetrics_
   this.height_ = targetWorkspaceMetrics.viewHeight;
+  this.workspace_.getParentSvg().cachedHeight_ = this.height_;
 
   var edgeWidth = this.width_ - this.CORNER_RADIUS;
   var edgeHeight = targetWorkspaceMetrics.viewHeight - 2 * this.CORNER_RADIUS;
@@ -431,6 +435,7 @@ Blockly.VerticalFlyout.prototype.reflowInternal_ = function() {
 
     // Record the width for .getMetrics_ and .position.
     this.width_ = flyoutWidth;
+    this.workspace_.getParentSvg().cachedWidth_ = this.width_;
     this.position();
   }
 };

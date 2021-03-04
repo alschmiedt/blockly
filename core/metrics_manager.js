@@ -348,7 +348,7 @@ Blockly.MetricsManager.prototype.getPaddedContent_ = function(
  *     content metrics if they have been previously computed. Passing in null
  *     may cause the content metrics to be computed again, if it is needed.
  * @return {!Blockly.MetricsManager.ContainerRegion} The metrics for the scroll
- *    container
+ *    container.
  */
 Blockly.MetricsManager.prototype.getScrollMetrics = function(
     opt_getWorkspaceCoordinates, opt_viewMetrics, opt_contentMetrics) {
@@ -361,14 +361,13 @@ Blockly.MetricsManager.prototype.getScrollMetrics = function(
   var paddedContent = this.getPaddedContent_(viewMetrics, contentMetrics);
 
   // Use combination of fixed bounds and padded content to make scroll area.
-  var top = fixedEdges.top !== undefined ?
-      fixedEdges.top : paddedContent.top;
-  var left = fixedEdges.left !== undefined ?
-      fixedEdges.left : paddedContent.left;
-  var bottom = fixedEdges.bottom !== undefined ?
-      fixedEdges.bottom : paddedContent.bottom;
-  var right = fixedEdges.right !== undefined ?
-      fixedEdges.right : paddedContent.right;
+  var top = fixedEdges.top !== undefined ? fixedEdges.top : paddedContent.top;
+  var left =
+      fixedEdges.left !== undefined ? fixedEdges.left : paddedContent.left;
+  var bottom = fixedEdges.bottom !== undefined ? fixedEdges.bottom :
+                                                 paddedContent.bottom;
+  var right =
+      fixedEdges.right !== undefined ? fixedEdges.right : paddedContent.right;
 
   return {
     top: top / scale,
@@ -421,8 +420,7 @@ Blockly.MetricsManager.prototype.getMetrics = function() {
   var absoluteMetrics = this.getAbsoluteMetrics();
   var viewMetrics = this.getViewMetrics();
   var contentMetrics = this.getContentMetrics();
-  var scrollMetrics =
-      this.getScrollMetrics(false, viewMetrics, contentMetrics);
+  var scrollMetrics = this.getScrollMetrics(false, viewMetrics, contentMetrics);
 
   return {
     contentHeight: contentMetrics.height,
@@ -461,6 +459,7 @@ Blockly.registry.register(
 
 /**
  * Metrics manager for a mutator's workspace.
+ * These metrics are mainly used to position the mutator's flyout.
  * @param {!Blockly.WorkspaceSvg} workspace The workspace associated with the
  *     mutator.
  * @param {!Blockly.Mutator} mutator The mutator to calculate metrics for.
@@ -468,12 +467,8 @@ Blockly.registry.register(
  * @constructor
  */
 Blockly.MutatorMetricsManager = function(workspace, mutator) {
-  // TODO: Should this be a property or should it just be a local variable?
-  this.unsupported = 0;
-
   /**
-   * The mutator to calculate metrics for.
-   * TODO: Update this.
+   * The mutator that owns the workspace to calculate metrics for.
    * @type {!Blockly.Mutator}
    * @protected
    */
@@ -484,42 +479,26 @@ Blockly.utils.object.inherits(
     Blockly.MutatorMetricsManager, Blockly.MetricsManager);
 
 /**
+ * TODO: How can I make it so that this doesn't have to be overriden?
  * @override
  */
-Blockly.MutatorMetricsManager.prototype.getContentMetrics = function() {
-  return {
-    height: this.unsupported,
-    width: this.unsupported,
-    top: this.unsupported,
-    left: this.unsupported,
-  };
-};
+// Blockly.MutatorMetricsManager.prototype.getViewMetrics = function(
+//     opt_getWorkspaceCoordinates) {
+//   var scale = opt_getWorkspaceCoordinates ? this.workspace_.scale : 1;
+//   var flyout = this.workspace_.getFlyout();
+//   var flyoutWidth = flyout ? flyout.getWidth() : 0;
+//   // TODO: This is weird.
+//   return {
+//     height: this.mutator_.workspaceHeight_ / scale,
+//     width: this.mutator_.workspaceWidth_ - flyoutWidth / scale,
+//     top: 0 / scale,
+//     left: 0 / scale,
+//   };
+// };
 
 /**
- * @override
- */
-Blockly.MutatorMetricsManager.prototype.getViewMetrics = function() {
-  var flyout = this.workspace_.getFlyout();
-  var flyoutWidth = flyout ? flyout.getWidth() : 0;
-  return {
-    height: this.mutator_.workspaceHeight_,
-    width: this.mutator_.workspaceWidth_ - flyoutWidth,
-    top: this.unsupported,
-    left: this.unsupported,
-  };
-};
-
-/**
- * @override
- */
-Blockly.MutatorMetricsManager.prototype.getAbsoluteMetrics = function() {
-  var flyout = this.workspace_.getFlyout();
-  var flyoutWidth = flyout ? flyout.getWidth() : 0;
-  return {top: this.unsupported, left: this.workspace_.RTL ? 0 : flyoutWidth};
-};
-
-/**
- * In charge of calculating metrics necessary to size scrollbars for the flyout.
+ * Calculate metrics for a flyout's workspace.
+ * The metrics are mainly used to size scrollbars for the flyout.
  * @param {!Blockly.WorkspaceSvg} workspace The flyout's workspace.
  * @param {!Blockly.IFlyout} flyout The flyout.
  * @extends {Blockly.MetricsManager}
@@ -531,7 +510,6 @@ Blockly.FlyoutMetricsManager = function(workspace, flyout) {
 
   /**
    * The flyout that owns the workspace to calculate metrics for.
-   * TODO: Update this.
    * @type {!Blockly.IFlyout}
    * @protected
    */
@@ -543,46 +521,63 @@ Blockly.utils.object.inherits(
     Blockly.FlyoutMetricsManager, Blockly.MetricsManager);
 
 /**
+ * Gets the bounding box of the blocks on the flyout's workspace.
+ * @returns {SVGRect} The bounding box of the blocks on the workspace.
  * @private
  */
 Blockly.FlyoutMetricsManager.prototype.getBoundingBox_ = function() {
   try {
-    var optionBox = this.workspace_.getCanvas().getBBox();
+    var blockBoundingBox = this.workspace_.getCanvas().getBBox();
   } catch (e) {
-    // TODO: Double check this.
     // Firefox has trouble with hidden elements (Bug 528969).
-    var optionBox = {height: 0, y: 0, width: 0, x: 0};
+    // 2021 Update: It looks like this was fixed around Firefox 77 released in
+    // 2020.
+    var blockBoundingBox = {height: 0, y: 0, width: 0, x: 0};
   }
-  return optionBox;
+  return blockBoundingBox;
 };
 
 /**
+ * Calculates the content metrics for a horizontal flyout.
+ * @param {boolean=} opt_getWorkspaceCoordinates True to get the content metrics
+ *     in workspace coordinates, false to get them in pixel coordinates.
+ * @return {!Blockly.MetricsManager.ContainerRegion} The metrics for the content
+ *     container.
  * @private
  */
-Blockly.FlyoutMetricsManager.prototype.getHorizontalContentMetrics_ =
-    function() {
-      var optionBox = this.getBoundingBox_();
+Blockly.FlyoutMetricsManager.prototype.getHorizontalContentMetrics_ = function(
+    opt_getWorkspaceCoordinates) {
+  var boundingBox = this.getBoundingBox_();
+  var scale = opt_getWorkspaceCoordinates ? 1 : this.workspace_.scale;
+  var margin = this.flyout_.MARGIN;
 
-      return {
-        height:
-            (optionBox.height + 2 * this.flyout_.MARGIN) * this.workspace_.scale,
-        width: (optionBox.width + 2 * this.flyout_.MARGIN) * this.workspace_.scale,
-        top: 0,
-        left: 0,
-      };
-    };
+  return {
+    height: (boundingBox.height + 2 * margin) * scale,
+    width: (boundingBox.width + 2 * margin) * scale,
+    top: 0,
+    left: 0,
+  };
+};
 
 /**
+ * Calculates the content metrics for a vertical flyout.
+ * @param {boolean=} opt_getWorkspaceCoordinates True to get the content metrics
+ *     in workspace coordinates, false to get them in pixel coordinates.
+ * @return {!Blockly.MetricsManager.ContainerRegion} The metrics for the content
+ *     container.
  * @private
  */
-Blockly.FlyoutMetricsManager.prototype.getVerticalContentMetrics_ = function() {
-  // TODO: Rename optionBox.
-  var optionBox = this.getBoundingBox_();
+Blockly.FlyoutMetricsManager.prototype.getVerticalContentMetrics_ = function(
+    opt_getWorkspaceCoordinates) {
+  var boundingBox = this.getBoundingBox_();
+  // TODO: Double check this.
+  var scale = opt_getWorkspaceCoordinates ? 1 : this.workspace_.scale;
+  var margin = this.flyout_.MARGIN;
   return {
-    height: optionBox.height * this.workspace_.scale + 2 * this.flyout_.MARGIN,
-    width: optionBox.width * this.workspace_.scale + 2 * this.flyout_.MARGIN,
-    top: optionBox.y,
-    left: optionBox.x,
+    height: boundingBox.height * scale + 2 * margin,
+    width: boundingBox.width * scale + 2 * margin,
+    top: boundingBox.y,
+    left: boundingBox.x,
   };
 };
 
@@ -590,12 +585,41 @@ Blockly.FlyoutMetricsManager.prototype.getVerticalContentMetrics_ = function() {
 /**
  * @override
  */
-Blockly.FlyoutMetricsManager.prototype.getContentMetrics = function() {
+Blockly.FlyoutMetricsManager.prototype.getContentMetrics = function(
+    opt_getWorkspaceCoordinates) {
   // TODO: Figure out where the isVisible part should go?
   if (this.flyout_.horizontalLayout) {
-    return this.getHorizontalContentMetrics_();
+    return this.getHorizontalContentMetrics_(opt_getWorkspaceCoordinates);
   } else {
-    return this.getVerticalContentMetrics_();
+    return this.getVerticalContentMetrics_(opt_getWorkspaceCoordinates);
+  }
+};
+
+/**
+ * @override
+ */
+Blockly.FlyoutMetricsManager.prototype.getScrollMetrics = function(
+    opt_getWorkspaceCoordinates) {
+  var boundingBox = this.getBoundingBox_();
+  var margin = this.flyout_.MARGIN;
+  // TODO: Double check this.
+  var scale = opt_getWorkspaceCoordinates ? 1 : this.workspace_.scale;
+    
+  // TODO: Figure out where the isVisible part should go?
+  if (this.flyout_.horizontalLayout) {
+    return {
+      height: (boundingBox.height + 2 * margin) * scale,
+      width: (boundingBox.width + 2 * margin) * scale,
+      top: 0,
+      left: 0,
+    };
+  } else {
+    return {
+      height: (boundingBox.height + 2 * margin) * scale,
+      width: (boundingBox.width + 2 * margin) * scale,
+      top: boundingBox.y - margin,
+      left: boundingBox.x - margin,
+    };
   }
 };
 
@@ -618,7 +642,7 @@ Blockly.FlyoutMetricsManager.prototype.getHorizontalViewMetrics_ = function() {
 };
 
 /**
- * Gets the 
+ * Gets the
  * @private
  */
 Blockly.FlyoutMetricsManager.prototype.getVerticalViewMetrics_ = function() {
@@ -661,14 +685,14 @@ Blockly.FlyoutMetricsManager.prototype.getViewMetrics = function() {
  */
 Blockly.FlyoutMetricsManager.prototype.getHorizontalAbsoluteMetrics_ =
     function() {
-      var absoluteTop = this.flyout_.SCROLLBAR_PADDING;
-      var absoluteLeft = this.flyout_.SCROLLBAR_PADDING;
+  var absoluteTop = this.flyout_.SCROLLBAR_PADDING;
+  var absoluteLeft = this.flyout_.SCROLLBAR_PADDING;
 
-      if (this.flyout_.toolboxPosition_ == Blockly.TOOLBOX_AT_BOTTOM) {
-        absoluteTop = 0;
-      }
-      return {top: absoluteTop, left: absoluteLeft};
-    };
+  if (this.flyout_.toolboxPosition_ == Blockly.TOOLBOX_AT_BOTTOM) {
+    absoluteTop = 0;
+  }
+  return {top: absoluteTop, left: absoluteLeft};
+};
 
 /**
  * Gets the absolute left and absolute top of a vertical flyout in pixel
@@ -680,8 +704,8 @@ Blockly.FlyoutMetricsManager.prototype.getHorizontalAbsoluteMetrics_ =
  */
 Blockly.FlyoutMetricsManager.prototype.getVerticalAbsoluteMetrics_ =
     function() {
-      return {top: this.flyout_.SCROLLBAR_PADDING, left: 0};
-    };
+  return {top: this.flyout_.SCROLLBAR_PADDING, left: 0};
+};
 
 /**
  * @override

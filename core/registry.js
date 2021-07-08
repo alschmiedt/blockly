@@ -258,6 +258,7 @@ Blockly.registry.getClass = function(type, name, opt_throwIfMissing) {
     Blockly.registry.getItem_(type, name, opt_throwIfMissing));
 };
 
+
 /**
  * Gets the object for the given name and type.
  * @param {string|!Blockly.registry.Type<T>} type The type of the plugin.

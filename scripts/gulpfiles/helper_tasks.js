@@ -14,6 +14,7 @@ function getPackageJson() {
   return require('../../package.json');
 }
 
+
 module.exports = {
   getPackageJson: getPackageJson
 }
